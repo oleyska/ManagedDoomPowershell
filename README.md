@@ -10,7 +10,7 @@ All the code will be uploaded when I feel it's ready.
 Performance is poor as expected, below is a screenshot from Windows 11 running without Realtime Protection.
 Linux is considerably faster but still slow, this is due to Anti Malware Scan Interface on Windows powershell build (AMSI)
 
-![Teaser-Poor performance](screenshots/1.png)
+![Teaser-Poor performance](Screenshots/1.png)
 
 
 ## License
@@ -32,4 +32,4 @@ Silk.NET uses the following native libraries:
 ## References
 
 
-* [Managed-Doom] (https://github.com/sinshu/managed-doom)
+* [Managed-Doom](https://github.com/sinshu/managed-doom)
