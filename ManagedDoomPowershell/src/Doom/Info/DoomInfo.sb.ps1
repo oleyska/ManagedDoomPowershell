@@ -1,0 +1,115 @@
+class DoomInfo {
+    static [AmmoInfos] $AmmoInfos = [AmmoInfos]::new()
+    static [mobjinfo[]] $MobjInfos = ([MobjInfos]::new()).MobjInfos
+    static [DoomString[]] $BgmNames = @(
+        [DoomString]::new("none"),
+        [DoomString]::new("e1m1"),
+        [DoomString]::new("e1m2"),
+        [DoomString]::new("e1m3"),
+        [DoomString]::new("e1m4"),
+        [DoomString]::new("e1m5"),
+        [DoomString]::new("e1m6"),
+        [DoomString]::new("e1m7"),
+        [DoomString]::new("e1m8"),
+        [DoomString]::new("e1m9"),
+        [DoomString]::new("e2m1"),
+        [DoomString]::new("e2m2"),
+        [DoomString]::new("e2m3"),
+        [DoomString]::new("e2m4"),
+        [DoomString]::new("e2m5"),
+        [DoomString]::new("e2m6"),
+        [DoomString]::new("e2m7"),
+        [DoomString]::new("e2m8"),
+        [DoomString]::new("e2m9"),
+        [DoomString]::new("e3m1"),
+        [DoomString]::new("e3m2"),
+        [DoomString]::new("e3m3"),
+        [DoomString]::new("e3m4"),
+        [DoomString]::new("e3m5"),
+        [DoomString]::new("e3m6"),
+        [DoomString]::new("e3m7"),
+        [DoomString]::new("e3m8"),
+        [DoomString]::new("e3m9"),
+        [DoomString]::new("inter"),
+        [DoomString]::new("intro"),
+        [DoomString]::new("bunny"),
+        [DoomString]::new("victor"),
+        [DoomString]::new("introa"),
+        [DoomString]::new("runnin"),
+        [DoomString]::new("stalks"),
+        [DoomString]::new("countd"),
+        [DoomString]::new("betwee"),
+        [DoomString]::new("doom"),
+        [DoomString]::new("the_da"),
+        [DoomString]::new("shawn"),
+        [DoomString]::new("ddtblu"),
+        [DoomString]::new("in_cit"),
+        [DoomString]::new("dead"),
+        [DoomString]::new("stlks2"),
+        [DoomString]::new("theda2"),
+        [DoomString]::new("doom2"),
+        [DoomString]::new("ddtbl2"),
+        [DoomString]::new("runni2"),
+        [DoomString]::new("dead2"),
+        [DoomString]::new("stlks3"),
+        [DoomString]::new("romero"),
+        [DoomString]::new("shawn2"),
+        [DoomString]::new("messag"),
+        [DoomString]::new("count2"),
+        [DoomString]::new("ddtbl3"),
+        [DoomString]::new("ampie"),
+        [DoomString]::new("theda3"),
+        [DoomString]::new("adrian"),
+        [DoomString]::new("messg2"),
+        [DoomString]::new("romer2"),
+        [DoomString]::new("tense"),
+        [DoomString]::new("shawn3"),
+        [DoomString]::new("openin"),
+        [DoomString]::new("evil"),
+        [DoomString]::new("ultima"),
+        [DoomString]::new("read_m"),
+        [DoomString]::new("dm2ttl"),
+        [DoomString]::new("dm2int")
+    )      
+    static [DeHackEdConst] $DeHackEdConst = [DeHackEdConst]::new()
+    static [MapTitles] $MapTitles = [MapTitles]::new()
+    static [MobjActions] $MobjActions = [MobjActions]::new()
+
+    static [MobjActions] GetMobjActions() {
+        return [DoomInfo]::MobjActions
+    }
+
+
+    static [object[]] GetMobjInfos() {
+        return [DoomInfo]::MobjInfos
+    }
+
+    static [hashtable] $ParTimes = @{}
+
+    static DoomInfo() {
+        [DoomInfo]::ParTimes["Doom1"] = @(
+            @(30, 75, 120, 90, 165, 180, 180, 30, 165),
+            @(90, 90, 90, 120, 90, 360, 240, 30, 170),
+            @(90, 45, 90, 150, 90, 90, 165, 30, 135),
+            @(165, 255, 135, 150, 180, 390, 135, 360, 180)
+        )
+    
+        [DoomInfo]::ParTimes["Doom2"] = @(30, 90, 120, 120, 90, 150, 120, 120, 270, 90,
+                                          210, 150, 150, 150, 210, 150, 420, 150, 210, 150,
+                                          240, 150, 180, 150, 150, 300, 330, 420, 300, 180,
+                                          120, 30)
+    }
+    
+    static [PlayerActions] $PlayerActions = [PlayerActions]::new()
+    static [PowerDuration] $PowerDuration = [PowerDuration]::new()
+    static [QuitMessages] $QuitMessages = [QuitMessages]::new()
+    static [SfxNames] $SfxNames = [SfxNames]::new()
+    static [SpriteNames] $SpriteNames = [SpriteNames]::new()
+
+    static [States]$states = [States]::new()
+
+    static [strings]$Strings = [strings]::new()
+    static [array]$SwitchNames = @( [DoomSwitches]::SwitchNames  )
+    static [DoomAnimation]$TextureAnimation = [DoomAnimation]::TextureAnimation
+    static [WeaponInfo[]]$WeaponInfos = ([WeaponInfos]::WeaponInfos)
+}

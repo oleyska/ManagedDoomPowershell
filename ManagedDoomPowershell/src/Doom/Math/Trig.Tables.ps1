@@ -1,0 +1,1 @@
+#Powershell does not support Partial classes, instead of doing inheritance.. trig.ps1

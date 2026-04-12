@@ -1,0 +1,151 @@
+class Texture {
+    #static [int]$DataSize = 10 #uneeded... I think
+
+    [string]$Name
+    [bool]$Masked
+    [int]$Width
+    [int]$Height
+    [TexturePatch[]]$Patches
+    [Patch]$Composite
+
+    Texture([string]$name, [bool]$masked, [int]$width, [int]$height, [TexturePatch[]]$patches) {
+        $this.Name = $name
+        $this.Masked = $masked
+        $this.Width = $width
+        $this.Height = $height
+        $this.Patches = $patches
+        $this.Composite = [Texture]::GenerateComposite($name, $width, $height, $patches)
+    }
+
+    static [Texture] FromData([byte[]]$data, [int]$offset, [Patch[]]$patchLookup) {
+        $mname = [DoomInterop]::ToString($data, $offset, 8)
+        $mmasked = [BitConverter]::ToInt32($data, $offset + 8)
+        $mwidth = [BitConverter]::ToInt16($data, $offset + 12)
+        $mheight = [BitConverter]::ToInt16($data, $offset + 14)
+        $patchCount = [BitConverter]::ToInt16($data, $offset + 20)
+        
+        $mpatches = New-Object 'TexturePatch[]' $patchCount
+        for ($i = 0; $i -lt $patchCount; $i++) {
+            $patchOffset = $offset + 22 + [TexturePatch]::DataSize * $i
+            $mpatches[$i] = [TexturePatch]::FromData($data, $patchOffset, $patchLookup)
+        }
+
+        $texture = [Texture]::new($mname, $mmasked -ne 0, $mwidth, $mheight, $mpatches)
+        if ($mname -eq 'AASTINKY') {
+            [Console]::WriteLine(
+                ("TextureLoadTrace name={0} width={1} height={2} patches={3} compositeCols={4}" -f
+                    $texture.Name,
+                    $texture.Width,
+                    $texture.Height,
+                    $texture.Patches.Length,
+                    $texture.Composite.Columns.Length))
+        }
+
+        return $texture
+    }
+
+    static [string] GetName([byte[]]$data, [int]$offset) {
+        return [DoomInterop]::ToString($data, $offset, 8)
+    }
+
+    static [int] GetHeight([byte[]]$data, [int]$offset) {
+        return [BitConverter]::ToInt16($data, $offset + 14)
+    }
+
+    static [Patch] GenerateComposite([string]$name, [int]$width, [int]$height, [TexturePatch[]]$patches) {
+        $patchCount = New-Object 'int[]' $width
+        $columns = New-Object 'Column[][]' $width
+        $compositeColumnCount = 0
+
+        foreach ($patch in $patches) {
+            if ($null -eq $patch -or $null -eq $patch.Patch) {
+                continue
+            }
+
+            $left = $patch.OriginX
+            $patchWidth = $patch.Patch.Width
+            $patchColumns = $patch.Patch.Columns
+            $right = $left + $patchWidth
+
+            $start = [Math]::Max($left, 0)
+            $end = [Math]::Min($right, $width)
+
+            for ($x = $start; $x -lt $end; $x++) {
+                $patchCount[$x]++
+                if ($patchCount[$x] -eq 2) {
+                    $compositeColumnCount++
+                }
+                $columns[$x] = $patchColumns[$x - $patch.OriginX]
+            }
+        }
+
+        $padding = [Math]::Max(128 - $height, 0)
+        $data = New-Object 'byte[]' ($height * $compositeColumnCount + $padding)
+        $i = 0
+        for ($x = 0; $x -lt $width; $x++) {
+            if ($patchCount[$x] -eq 0) {
+                $columns[$x] = [Column[]]@()
+                continue
+            }
+
+            if ($patchCount[$x] -ge 2) {
+                $column = [Column]::new(0, $data, $height * $i, $height)
+
+                foreach ($patch in $patches) {
+                    if ($null -eq $patch -or $null -eq $patch.Patch) {
+                        continue
+                    }
+
+                    $patchWidth = $patch.Patch.Width
+                    $patchColumns = $patch.Patch.Columns
+                    $px = $x - $patch.OriginX
+                    if ($px -lt 0 -or $px -ge $patchWidth) {
+                        continue
+                    }
+
+                    $patchColumn = $patchColumns[$px]
+                    [Texture]::DrawColumnInCache(
+                        $patchColumn,
+                        $column.Data,
+                        $column.Offset,
+                        $patch.OriginY,
+                        $height
+                    )
+                }
+
+                $columns[$x] = @($column)
+                $i++
+            }
+        }
+
+        return [Patch]::new($name, $width, $height, 0, 0, $columns)
+    }
+
+    static [void] DrawColumnInCache([Column[]]$source, [byte[]]$destination, [int]$destinationOffset, [int]$destinationY, [int]$destinationHeight) {
+        foreach ($column in $source) {
+            $sourceIndex = $column.Offset
+            $destinationIndex = $destinationOffset + $destinationY + $column.TopDelta
+            $length = $column.Length
+
+            $topExceedance = -($destinationY + $column.TopDelta)
+            if ($topExceedance -gt 0) {
+                $sourceIndex += $topExceedance
+                $destinationIndex += $topExceedance
+                $length -= $topExceedance
+            }
+
+            $bottomExceedance = $destinationY + $column.TopDelta + $column.Length - $destinationHeight
+            if ($bottomExceedance -gt 0) {
+                $length -= $bottomExceedance
+            }
+
+            if ($length -gt 0) {
+                [Array]::Copy($column.Data, $sourceIndex, $destination, $destinationIndex, $length)
+            }
+        }
+    }
+
+    [string] ToString() {
+        return $this.Name
+    }
+}

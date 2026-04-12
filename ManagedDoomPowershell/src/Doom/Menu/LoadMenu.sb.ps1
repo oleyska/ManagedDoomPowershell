@@ -1,0 +1,90 @@
+class LoadMenu : MenuDef {
+    [string[]] $name
+    [int[]] $titleX
+    [int[]] $titleY
+    [TextBoxMenuItem[]] $items
+
+    [int] $index
+    [TextBoxMenuItem] $choice
+
+    # Constructor
+    LoadMenu([DoomMenu] $menu, [string] $name, [int] $titleX, [int] $titleY, [int] $firstChoice, [TextBoxMenuItem[]] $items) : base($menu) {
+        [menudef]::new($menu)
+        $this.name = @($name)
+        $this.titleX = @($titleX)
+        $this.titleY = @($titleY)
+        $this.items = $items
+
+        $this.index = $firstChoice
+        $this.choice = $this.items[$this.index]
+    }
+
+    # Open method
+    [void] Open() {
+        for ($i = 0; $i -lt $this.items.Length; $i++) {
+            $this.items[$i].SetText($this.Menu.SaveSlots.Get_Item($i))
+        }
+    }
+
+    # Up method
+    [void] Up() {
+        $this.index--
+        if ($this.index -lt 0) {
+            $this.index = $this.items.Length - 1
+        }
+
+        $this.choice = $this.items[$this.index]
+    }
+
+    # Down method
+    [void] Down() {
+        $this.index++
+        if ($this.index -ge $this.items.Length) {
+            $this.index = 0
+        }
+
+        $this.choice = $this.items[$this.index]
+    }
+
+    # DoEvent method for event handling
+    [bool] DoEvent([DoomEvent] $e) {
+        if ($e.Type -ne [EventType]::KeyDown) {
+            return $true
+        }
+
+        if ($e.Key -eq [DoomKey]::Up) {
+            $this.Up()
+            $this.Menu.StartSound([Sfx]::PSTOP)
+        }
+
+        if ($e.Key -eq [DoomKey]::Down) {
+            $this.Down()
+            $this.Menu.StartSound([Sfx]::PSTOP)
+        }
+
+        if ($e.Key -eq [DoomKey]::Enter) {
+            if ($this.DoLoad($this.index)) {
+                $this.Menu.Close()
+            }
+            $this.Menu.StartSound([Sfx]::PISTOL)
+        }
+
+        if ($e.Key -eq [DoomKey]::Escape) {
+            $this.Menu.Close()
+            $this.Menu.StartSound([Sfx]::SWTCHX)
+        }
+
+        return $true
+    }
+
+    # DoLoad method for loading a game
+    [bool] DoLoad([int] $slotNumber) {
+        if ($null -ne $this.Menu.SaveSlots.Get_Item($slotNumber)) {
+            $this.Menu.Doom.LoadGame($slotNumber)
+            return $true
+        } else {
+            return $false
+        }
+    }
+
+}

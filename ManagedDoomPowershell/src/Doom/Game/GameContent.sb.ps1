@@ -1,0 +1,47 @@
+class GameContent {
+    [Wad] $Wad
+    [Palette] $Palette
+    [ColorMap] $ColorMap
+    [ITextureLookup] $Textures
+    [IFlatLookup] $Flats
+    [ISpriteLookup] $Sprites
+    [TextureAnimation] $Animation
+
+    GameContent() {
+    }
+
+    GameContent($args) {
+        $mArgs = [CommandLineArgs]::new($args)
+        $this.Wad = [Wad]::new([ConfigUtilities]::GetWadPaths($mArgs))
+
+        [DeHackEd]::Initialize($mArgs, $this.Wad)
+
+        $this.Palette = [Palette]::new($this.Wad)
+        $this.ColorMap = [ColorMap]::new($this.Wad)
+        $this.Textures = [TextureLookup]::new($this.Wad)
+        $this.Flats = [FlatLookup]::new($this.Wad)
+        $this.Sprites = [SpriteLookup]::new($this.Wad)
+        $this.Animation = [TextureAnimation]::new($this.Textures, $this.Flats)
+    }
+
+    static [GameContent] CreateDummy([string[]] $wadPaths) {
+        $gc = [GameContent]::new()
+
+        $gc.Wad = [Wad]::new($wadPaths)
+        $gc.Palette = [Palette]::new($gc.Wad)
+        $gc.ColorMap = [ColorMap]::new($gc.Wad)
+        $gc.Textures = [DummyTextureLookup]::new($gc.Wad)
+        $gc.Flats = [DummyFlatLookup]::new($gc.Wad)
+        $gc.Sprites = [DummySpriteLookup]::new($gc.Wad)
+        $gc.Animation = [TextureAnimation]::new($gc.Textures, $gc.Flats)
+
+        return $gc
+    }
+
+    [void] Dispose() {
+        if ($null -ne $this.Wad) {
+            $this.Wad.Dispose()
+            $this.Wad = $null
+        }
+    }
+}

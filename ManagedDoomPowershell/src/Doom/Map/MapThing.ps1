@@ -1,0 +1,53 @@
+class MapThing {
+    static [int] $dataSize = 10
+    [Fixed]$x
+    [Fixed]$y
+    [Angle]$angle
+    [int]$type
+    [ThingFlags]$flags
+
+    static [MapThing]$Empty = [MapThing]::new([Fixed]::Zero, [Fixed]::Zero, [Angle]::Ang0, 0, 0)
+
+    MapThing([Fixed]$x, [Fixed]$y, [Angle]$angle, [int]$type, [ThingFlags]$flags) {
+        $this.x = $x
+        $this.y = $y
+        $this.angle = $angle
+        $this.type = $type
+        $this.flags = $flags
+    }
+
+    static [MapThing] FromData([byte[]]$data, [int]$offset) {
+        $mx = [BitConverter]::ToInt16($data, $offset)
+        $my = [BitConverter]::ToInt16($data, $offset + 2)
+        $mAngle = [BitConverter]::ToInt16($data, $offset + 4)
+        $mtype = [BitConverter]::ToInt16($data, $offset + 6)
+        $mflags = [BitConverter]::ToInt16($data, $offset + 8)
+
+        return [MapThing]::new(
+            [Fixed]::FromInt($mx),
+            [Fixed]::FromInt($my),
+            [Angle]::new([Angle]::Ang45.Data * [uint]($mAngle / 45)),
+            $mtype,
+            [ThingFlags]$mflags
+        )
+    }
+
+    static [MapThing[]] FromWad([Wad]$wad, [int]$lump) {
+        $length = $wad.GetLumpSize($lump)
+        if ($length % [MapThing]::dataSize -ne 0) {
+            throw "Invalid data size"
+        }
+
+        $data = $wad.ReadLump($lump)
+        $count = $length / [MapThing]::dataSize
+        $things = @()
+
+        for ($i = 0; $i -lt $count; $i++) {
+            $offset = [MapThing]::dataSize * $i
+            $things += [MapThing]::FromData($data, $offset)
+        }
+
+        return $things
+    }
+
+}
