@@ -11,57 +11,6 @@ Performance is poor as expected, below is a screenshot from Windows 11 running w
 Linux is considerably faster but still slow, this is due to Anti Malware Scan Interface on Windows powershell build (AMSI)
 
 ![Teaser-Poor performance](Screenshots/1.png)
-## 
-
-## Windows Installation.
-Ensure you have pwsh.exe (powershell.exe and pwsh.exe are two different things).
-This is written for powershell 7+ and only tested with 7.5.4 and 7.6
-
-Download the project, Unzip.
-
-*Recommended that you Either disable realtime protection in windows defender or add a dev volume for performance in Windows, this is purely for performance.
-With defender running it will fail to clean up the bundle file and generate an error due to file locking.
-
-Navigate to src folder and run startgame_windows.cmd
-
-Alternatively open the folder in in Visual studio code and navigate to /src/PowershellHandler.
-Modify 
-```$rootpath = "C:/Code/Doom Powershell/"```
-To where your folder is, immediate subfolders should be /src and /External
-And run selection of StartGame.ps1
-
-## Linux Installation.
-
-Ensure you have Powershell installed, 7.5.4 and 7.6 are tested
-
-This requires glfw installed
-
-Fedora
-```sudo dnf install glfw```
-Ubuntu 
-```sudo apt-get install glfw```
-
-in a terminal
-navigate to /src folder
-chmod a+x startgame_linux.sh
-
-then sh startgame_linux.sh
-
-## MacOS
-Tested on M1 Max, provisions should be present to run on x86_64 macos, but it is untested.
-
-Tested with Powershell 7.5.4 and 7.6
-
-With brew you can install both powershell and glfw which is required.
-
-```brew install powershell```
-```brew install glfw```
-in a terminal
-
-navigate to /src folder
-chmod a+x startgame_linux.sh
-
-then sh startgame_macos.sh
 
 ## License
 
