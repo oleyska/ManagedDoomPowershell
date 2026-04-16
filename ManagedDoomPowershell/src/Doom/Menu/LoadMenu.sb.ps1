@@ -7,7 +7,6 @@ class LoadMenu : MenuDef {
     [int] $index
     [TextBoxMenuItem] $choice
 
-    # Constructor
     LoadMenu([DoomMenu] $menu, [string] $name, [int] $titleX, [int] $titleY, [int] $firstChoice, [TextBoxMenuItem[]] $items) : base($menu) {
         [menudef]::new($menu)
         $this.name = @($name)
@@ -19,14 +18,12 @@ class LoadMenu : MenuDef {
         $this.choice = $this.items[$this.index]
     }
 
-    # Open method
     [void] Open() {
         for ($i = 0; $i -lt $this.items.Length; $i++) {
             $this.items[$i].SetText($this.Menu.SaveSlots.Get_Item($i))
         }
     }
 
-    # Up method
     [void] Up() {
         $this.index--
         if ($this.index -lt 0) {
@@ -36,7 +33,6 @@ class LoadMenu : MenuDef {
         $this.choice = $this.items[$this.index]
     }
 
-    # Down method
     [void] Down() {
         $this.index++
         if ($this.index -ge $this.items.Length) {
@@ -46,7 +42,6 @@ class LoadMenu : MenuDef {
         $this.choice = $this.items[$this.index]
     }
 
-    # DoEvent method for event handling
     [bool] DoEvent([DoomEvent] $e) {
         if ($e.Type -ne [EventType]::KeyDown) {
             return $true
@@ -77,7 +72,6 @@ class LoadMenu : MenuDef {
         return $true
     }
 
-    # DoLoad method for loading a game
     [bool] DoLoad([int] $slotNumber) {
         if ($null -ne $this.Menu.SaveSlots.Get_Item($slotNumber)) {
             $this.Menu.Doom.LoadGame($slotNumber)

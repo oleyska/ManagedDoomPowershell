@@ -130,8 +130,14 @@ class Intermission {
             $this.random = [DoomRandom]::new()
         }
 
-        foreach ($animation in $this.animations) {
-            $animation.Reset($this.bgCount)
+        $intermissionAnimationsEnumerable = $this.animations
+        if ($null -ne $intermissionAnimationsEnumerable) {
+            $intermissionAnimationsEnumerator = $intermissionAnimationsEnumerable.GetEnumerator()
+            for (; $intermissionAnimationsEnumerator.MoveNext(); ) {
+                $animation = $intermissionAnimationsEnumerator.Current
+                $animation.Reset($this.bgCount)
+
+            }
         }
     }
 
@@ -548,8 +554,14 @@ class Intermission {
             return
         }
 
-        foreach ($animation in $this.animations) {
-            $animation.Update($this.bgCount)
+        $intermissionAnimationsEnumerable = $this.animations
+        if ($null -ne $intermissionAnimationsEnumerable) {
+            $intermissionAnimationsEnumerator = $intermissionAnimationsEnumerable.GetEnumerator()
+            for (; $intermissionAnimationsEnumerator.MoveNext(); ) {
+                $animation = $intermissionAnimationsEnumerator.Current
+                $animation.Update($this.bgCount)
+
+            }
         }
     }
 

@@ -83,10 +83,16 @@ class FlatLookup : IFlatLookup{
 
             $dupCheck = @{}
             $distinctFlats = @()
-            foreach ($lump in $allFlats) {
-                if (-not $dupCheck.ContainsKey($wad.LumpInfos[$lump].Name)) {
-                    $distinctFlats += $lump
-                    $dupCheck[$wad.LumpInfos[$lump].Name] = $true
+            $flatLumpsEnumerable = $allFlats
+            if ($null -ne $flatLumpsEnumerable) {
+                $flatLumpsEnumerator = $flatLumpsEnumerable.GetEnumerator()
+                for (; $flatLumpsEnumerator.MoveNext(); ) {
+                    $lump = $flatLumpsEnumerator.Current
+                    if (-not $dupCheck.ContainsKey($wad.LumpInfos[$lump].Name)) {
+                        $distinctFlats += $lump
+                        $dupCheck[$wad.LumpInfos[$lump].Name] = $true
+                    }
+
                 }
             }
             [Array]::Reverse($distinctFlats)

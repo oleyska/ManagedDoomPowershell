@@ -230,74 +230,11 @@ class DrawScreen {
         $screenHeight = $this.Height
         $basePos = $screenHeight * $x
 
-        foreach ($column in $source) {
-            $sourceIndex = $column.Offset
-            $drawY = $y + $column.TopDelta
-            $drawLength = $column.Length
-
-            if ($drawY -lt 0) {
-                $exceed = -$drawY
-                $sourceIndex += $exceed
-                $drawY = 0
-                $drawLength -= $exceed
-            }
-
-            if ($drawY + $drawLength -gt $screenHeight) {
-                $exceed = $drawY + $drawLength - $screenHeight
-                $drawLength -= $exceed
-            }
-
-            if ($drawLength -gt 0) {
-                [Buffer]::BlockCopy($column.Data, $sourceIndex, $screenData, $basePos + $drawY, $drawLength)
-            }
-        }
-    }
-
-    hidden [void] DrawColumnPair1X([Column[]] $source, [int] $x, [int] $y) {
-        if ($null -eq $source -or $source.Length -eq 0) {
-            return
-        }
-
-        $screenData = $this.Data
-        $screenHeight = $this.Height
-        $basePos1 = $screenHeight * $x
-        $basePos2 = $basePos1 + $screenHeight
-
-        foreach ($column in $source) {
-            $sourceIndex = $column.Offset
-            $drawY = $y + $column.TopDelta
-            $drawLength = $column.Length
-
-            if ($drawY -lt 0) {
-                $exceed = -$drawY
-                $sourceIndex += $exceed
-                $drawY = 0
-                $drawLength -= $exceed
-            }
-
-            if ($drawY + $drawLength -gt $screenHeight) {
-                $exceed = $drawY + $drawLength - $screenHeight
-                $drawLength -= $exceed
-            }
-
-            if ($drawLength -gt 0) {
-                [Buffer]::BlockCopy($column.Data, $sourceIndex, $screenData, $basePos1 + $drawY, $drawLength)
-                [Buffer]::BlockCopy($column.Data, $sourceIndex, $screenData, $basePos2 + $drawY, $drawLength)
-            }
-        }
-    }
-
-    [void] DrawColumn([Column[]] $source, [int] $x, [int] $y, [int] $scale) {
-        if ($null -eq $source -or $source.Length -eq 0) {
-            return
-        }
-
-        $screenData = $this.Data
-        $screenHeight = $this.Height
-        $step = [Fixed]::One / $scale
-
-        if ($scale -eq 1) {
-            foreach ($column in $source) {
+        $blitSourceColumnsEnumerable = $source
+        if ($null -ne $blitSourceColumnsEnumerable) {
+            $blitSourceColumnsEnumerator = $blitSourceColumnsEnumerable.GetEnumerator()
+            for (; $blitSourceColumnsEnumerator.MoveNext(); ) {
+                $column = $blitSourceColumnsEnumerator.Current
                 $sourceIndex = $column.Offset
                 $drawY = $y + $column.TopDelta
                 $drawLength = $column.Length
@@ -315,7 +252,88 @@ class DrawScreen {
                 }
 
                 if ($drawLength -gt 0) {
-                    [Buffer]::BlockCopy($column.Data, $sourceIndex, $screenData, $screenHeight * $x + $drawY, $drawLength)
+                    [Buffer]::BlockCopy($column.Data, $sourceIndex, $screenData, $basePos + $drawY, $drawLength)
+                }
+
+            }
+        }
+    }
+
+    hidden [void] DrawColumnPair1X([Column[]] $source, [int] $x, [int] $y) {
+        if ($null -eq $source -or $source.Length -eq 0) {
+            return
+        }
+
+        $screenData = $this.Data
+        $screenHeight = $this.Height
+        $basePos1 = $screenHeight * $x
+        $basePos2 = $basePos1 + $screenHeight
+
+        $pairedSourceColumnsEnumerable = $source
+        if ($null -ne $pairedSourceColumnsEnumerable) {
+            $pairedSourceColumnsEnumerator = $pairedSourceColumnsEnumerable.GetEnumerator()
+            for (; $pairedSourceColumnsEnumerator.MoveNext(); ) {
+                $column = $pairedSourceColumnsEnumerator.Current
+                $sourceIndex = $column.Offset
+                $drawY = $y + $column.TopDelta
+                $drawLength = $column.Length
+
+                if ($drawY -lt 0) {
+                    $exceed = -$drawY
+                    $sourceIndex += $exceed
+                    $drawY = 0
+                    $drawLength -= $exceed
+                }
+
+                if ($drawY + $drawLength -gt $screenHeight) {
+                    $exceed = $drawY + $drawLength - $screenHeight
+                    $drawLength -= $exceed
+                }
+
+                if ($drawLength -gt 0) {
+                    [Buffer]::BlockCopy($column.Data, $sourceIndex, $screenData, $basePos1 + $drawY, $drawLength)
+                    [Buffer]::BlockCopy($column.Data, $sourceIndex, $screenData, $basePos2 + $drawY, $drawLength)
+                }
+
+            }
+        }
+    }
+
+    [void] DrawColumn([Column[]] $source, [int] $x, [int] $y, [int] $scale) {
+        if ($null -eq $source -or $source.Length -eq 0) {
+            return
+        }
+
+        $screenData = $this.Data
+        $screenHeight = $this.Height
+        $step = [Fixed]::One / $scale
+
+        if ($scale -eq 1) {
+            $unitScaleSourceColumnsEnumerable = $source
+            if ($null -ne $unitScaleSourceColumnsEnumerable) {
+                $unitScaleSourceColumnsEnumerator = $unitScaleSourceColumnsEnumerable.GetEnumerator()
+                for (; $unitScaleSourceColumnsEnumerator.MoveNext(); ) {
+                    $column = $unitScaleSourceColumnsEnumerator.Current
+                    $sourceIndex = $column.Offset
+                    $drawY = $y + $column.TopDelta
+                    $drawLength = $column.Length
+
+                    if ($drawY -lt 0) {
+                        $exceed = -$drawY
+                        $sourceIndex += $exceed
+                        $drawY = 0
+                        $drawLength -= $exceed
+                    }
+
+                    if ($drawY + $drawLength -gt $screenHeight) {
+                        $exceed = $drawY + $drawLength - $screenHeight
+                        $drawLength -= $exceed
+                    }
+
+                    if ($drawLength -gt 0) {
+                        [Buffer]::BlockCopy($column.Data, $sourceIndex, $screenData, $screenHeight * $x + $drawY, $drawLength)
+                    }
+
                 }
             }
             return
@@ -326,34 +344,40 @@ class DrawScreen {
             return
         }
 
-        foreach ($column in $source) {
-            $exTopDelta = $scale * $column.TopDelta
-            $exLength = $scale * $column.Length
+        $scaledSourceColumnsEnumerable = $source
+        if ($null -ne $scaledSourceColumnsEnumerable) {
+            $scaledSourceColumnsEnumerator = $scaledSourceColumnsEnumerable.GetEnumerator()
+            for (; $scaledSourceColumnsEnumerator.MoveNext(); ) {
+                $column = $scaledSourceColumnsEnumerator.Current
+                $exTopDelta = $scale * $column.TopDelta
+                $exLength = $scale * $column.Length
 
-            $sourceIndex = $column.Offset
-            $drawY = $y + $exTopDelta
-            $drawLength = $exLength
+                $sourceIndex = $column.Offset
+                $drawY = $y + $exTopDelta
+                $drawLength = $exLength
 
-            $i = 0
-            $p = $screenHeight * $x + $drawY
-            $frac = [Fixed]::One / $scale - [Fixed]::Epsilon
+                $i = 0
+                $p = $screenHeight * $x + $drawY
+                $frac = [Fixed]::One / $scale - [Fixed]::Epsilon
 
-            if ($drawY -lt 0) {
-                $exceed = -$drawY
-                $p += $exceed
-                $frac += $exceed * $step
-                $i += $exceed
-            }
+                if ($drawY -lt 0) {
+                    $exceed = -$drawY
+                    $p += $exceed
+                    $frac += $exceed * $step
+                    $i += $exceed
+                }
 
-            if ($drawY + $drawLength -gt $screenHeight) {
-                $exceed = $drawY + $drawLength - $screenHeight
-                $drawLength -= $exceed
-            }
+                if ($drawY + $drawLength -gt $screenHeight) {
+                    $exceed = $drawY + $drawLength - $screenHeight
+                    $drawLength -= $exceed
+                }
 
-            for (; $i -lt $drawLength; $i++) {
-                $screenData[$p] = $column.Data[$sourceIndex + $frac.ToIntFloor()]
-                $p++
-                $frac += $step
+                for (; $i -lt $drawLength; $i++) {
+                    $screenData[$p] = $column.Data[$sourceIndex + $frac.ToIntFloor()]
+                    $p++
+                    $frac += $step
+                }
+
             }
         }
     }
@@ -367,34 +391,40 @@ class DrawScreen {
         $screenHeight = $this.Height
         $step = [Fixed]::One / $scale
 
-        foreach ($column in $source) {
-            $exTopDelta = $scale * $column.TopDelta
-            $exLength = $scale * $column.Length
+        $exactSourceColumnsEnumerable = $source
+        if ($null -ne $exactSourceColumnsEnumerable) {
+            $exactSourceColumnsEnumerator = $exactSourceColumnsEnumerable.GetEnumerator()
+            for (; $exactSourceColumnsEnumerator.MoveNext(); ) {
+                $column = $exactSourceColumnsEnumerator.Current
+                $exTopDelta = $scale * $column.TopDelta
+                $exLength = $scale * $column.Length
 
-            $sourceIndex = $column.Offset
-            $drawY = $y + $exTopDelta
-            $drawLength = $exLength
+                $sourceIndex = $column.Offset
+                $drawY = $y + $exTopDelta
+                $drawLength = $exLength
 
-            $i = 0
-            $p = $screenHeight * $x + $drawY
-            $frac = [Fixed]::One / $scale - [Fixed]::Epsilon
+                $i = 0
+                $p = $screenHeight * $x + $drawY
+                $frac = [Fixed]::One / $scale - [Fixed]::Epsilon
 
-            if ($drawY -lt 0) {
-                $exceed = -$drawY
-                $p += $exceed
-                $frac += $exceed * $step
-                $i += $exceed
-            }
+                if ($drawY -lt 0) {
+                    $exceed = -$drawY
+                    $p += $exceed
+                    $frac += $exceed * $step
+                    $i += $exceed
+                }
 
-            if ($drawY + $drawLength -gt $screenHeight) {
-                $exceed = $drawY + $drawLength - $screenHeight
-                $drawLength -= $exceed
-            }
+                if ($drawY + $drawLength -gt $screenHeight) {
+                    $exceed = $drawY + $drawLength - $screenHeight
+                    $drawLength -= $exceed
+                }
 
-            for (; $i -lt $drawLength; $i++) {
-                $screenData[$p] = $column.Data[$sourceIndex + $frac.ToIntFloor()]
-                $p++
-                $frac += $step
+                for (; $i -lt $drawLength; $i++) {
+                    $screenData[$p] = $column.Data[$sourceIndex + $frac.ToIntFloor()]
+                    $p++
+                    $frac += $step
+                }
+
             }
         }
     }
@@ -459,29 +489,35 @@ class DrawScreen {
         $drawX = $x
         $drawY = $y - 7 * $scale
 
-        foreach ($ch in $text.ToCharArray()) {
-            if ([int][char]$ch -ge $this.Chars.Length) {
-                continue
+        $textCharactersEnumerable = $text.ToCharArray()
+        if ($null -ne $textCharactersEnumerable) {
+            $textCharactersEnumerator = $textCharactersEnumerable.GetEnumerator()
+            for (; $textCharactersEnumerator.MoveNext(); ) {
+                $ch = $textCharactersEnumerator.Current
+                if ([int][char]$ch -ge $this.Chars.Length) {
+                    continue
+                }
+
+                if ($ch -eq " ") {
+                    $drawX += 4 * $scale
+                    continue
+                }
+
+                $index = [int][char]$ch
+                if ($index -ge [int][char]'a' -and $index -le [int][char]'z') {
+                    $index = $index - [int][char]'a' + [int][char]'A'
+                }
+
+                $patch = $this.Chars[$index]
+                if ($null -eq $patch) {
+                    continue
+                }
+
+                $this.DrawPatch($patch, $drawX, $drawY, $scale)
+
+                $drawX += $scale * $patch.Width
+
             }
-
-            if ($ch -eq " ") {
-                $drawX += 4 * $scale
-                continue
-            }
-
-            $index = [int][char]$ch
-            if ($index -ge [int][char]'a' -and $index -le [int][char]'z') {
-                $index = $index - [int][char]'a' + [int][char]'A'
-            }
-
-            $patch = $this.Chars[$index]
-            if ($null -eq $patch) {
-                continue
-            }
-
-            $this.DrawPatch($patch, $drawX, $drawY, $scale)
-
-            $drawX += $scale * $patch.Width
         }
     }
     
@@ -510,27 +546,33 @@ class DrawScreen {
     [int] MeasureText([string] $text, [int] $scale) {
         $mWidth = 0
     
-        foreach ($ch in $text.ToCharArray()) {
-            if ([int][char]$ch -ge $this.Chars.Length) {
-                continue
+        $textCharactersEnumerable = $text.ToCharArray()
+        if ($null -ne $textCharactersEnumerable) {
+            $textCharactersEnumerator = $textCharactersEnumerable.GetEnumerator()
+            for (; $textCharactersEnumerator.MoveNext(); ) {
+                $ch = $textCharactersEnumerator.Current
+                if ([int][char]$ch -ge $this.Chars.Length) {
+                    continue
+                }
+
+                if ($ch -eq " ") {
+                    $mWidth += 4 * $scale
+                    continue
+                }
+
+                $index = [int][char]$ch
+                if ($index -ge [int][char]'a' -and $index -le [int][char]'z') {
+                    $index = $index - [int][char]'a' + [int][char]'A'
+                }
+
+                $patch = $this.Chars[$index]
+                if ($null -eq $patch) {
+                    continue
+                }
+
+                $mWidth += $scale * $patch.Width
+
             }
-    
-            if ($ch -eq " ") {
-                $mWidth += 4 * $scale
-                continue
-            }
-    
-            $index = [int][char]$ch
-            if ($index -ge [int][char]'a' -and $index -le [int][char]'z') {
-                $index = $index - [int][char]'a' + [int][char]'A'
-            }
-    
-            $patch = $this.Chars[$index]
-            if ($null -eq $patch) {
-                continue
-            }
-    
-            $mWidth += $scale * $patch.Width
         }
     
         return $mWidth
@@ -619,11 +661,11 @@ class DrawScreen {
     }
     [void] Bresenham([int] $x1, [int] $y1, [int] $x2, [int] $y2, [int] $color) {
         $dx = $x2 - $x1
-        $ax = 2 * (if ($dx -lt 0) { -$dx } else { $dx })
+        $ax = 2 * [Math]::Abs($dx)
         $sx = if ($dx -lt 0) { -1 } else { 1 }
     
         $dy = $y2 - $y1
-        $ay = 2 * (if ($dy -lt 0) { -$dy } else { $dy })
+        $ay = 2 * [Math]::Abs($dy)
         $sy = if ($dy -lt 0) { -1 } else { 1 }
     
         $x = $x1
@@ -670,16 +712,6 @@ class DrawScreen {
             
 }
 
-<#
-enum OutCode
-{
-    Inside = 0
-    Left = 1
-    Right = 2
-    Bottom = 4
-    Top = 8
-}
-#>
 [Flags()]
 enum OutCode {
     Inside = 0

@@ -102,7 +102,7 @@ class SectorAction {
         # Keep checking (crush other things).	
         return $true
     }
-    # ChangeSector method
+
     [bool] ChangeSector([Sector] $sector, [bool] $crunch) {
         $this.noFit = $false
         $this.crushChange = $crunch
@@ -120,7 +120,6 @@ class SectorAction {
         return $this.noFit
     }
 
-    # MovePlane method
     [SectorActionResult] MovePlane([Sector] $sector, [Fixed] $speed, [Fixed] $dest, [bool] $crush, [int] $floorOrCeiling, [int] $direction) {
         switch ($floorOrCeiling) {
             0 { # Floor.
@@ -223,7 +222,7 @@ class SectorAction {
 
         return [SectorActionResult]::OK
     }
-    # GetNextSector method
+
     [Sector] GetNextSector([LineDef] $line, [Sector] $sector) {
         if (($line.Flags -band [LineFlags]::TwoSided) -eq 0) {
             return $null
@@ -236,7 +235,6 @@ class SectorAction {
         return $line.FrontSector
     }
 
-    # FindLowestFloorSurrounding method
     [Fixed] FindLowestFloorSurrounding([Sector] $sector) {
         $floor = $sector.FloorHeight
 
@@ -256,7 +254,6 @@ class SectorAction {
         return $floor
     }
 
-    # FindHighestFloorSurrounding method
     [Fixed] FindHighestFloorSurrounding([Sector] $sector) {
         $floor = [Fixed]::FromInt(-500)
 
@@ -276,7 +273,6 @@ class SectorAction {
         return $floor
     }
 
-    # FindLowestCeilingSurrounding method
     [Fixed] FindLowestCeilingSurrounding([Sector] $sector) {
         $height = [Fixed]::MaxValue
 
@@ -296,7 +292,6 @@ class SectorAction {
         return $height
     }
 
-    # FindHighestCeilingSurrounding method
     [Fixed] FindHighestCeilingSurrounding([Sector] $sector) {
         $height = [Fixed]::Zero
 
@@ -316,7 +311,6 @@ class SectorAction {
         return $height
     }
 
-    # FindSectorFromLineTag method
     [int] FindSectorFromLineTag([LineDef] $line, [int] $start) {
         $sectors = $this.world.Map.Sectors
 
@@ -329,7 +323,6 @@ class SectorAction {
         return -1
     }
 
-    # DoLocalDoor method
     [void] DoLocalDoor([LineDef] $line, [Mobj] $thing) {
         # Check for locks.
         $player = $thing.Player
@@ -560,7 +553,6 @@ class SectorAction {
         return $result
     }
 
-    # Teleport Method
     [bool]Teleport([LineDef]$line, [int]$side, [Mobj]$thing)
     {
         # Don't teleport missiles.
@@ -582,84 +574,89 @@ class SectorAction {
         {
             if ($sectors[$i].Tag -eq $tag)
             {
-                foreach ($thinker in $this.world.Thinkers)
-                {
-                    $dest = $thinker -as [Mobj]
+                $teleportThinkersEnumerable = $this.world.Thinkers
+                if ($null -ne $teleportThinkersEnumerable) {
+                    $teleportThinkersEnumerator = $teleportThinkersEnumerable.GetEnumerator()
+                    for (; $teleportThinkersEnumerator.MoveNext(); ) {
+                        $thinker = $teleportThinkersEnumerator.Current
+                        $dest = $thinker -as [Mobj]
 
-                    if ($null -eq $dest)
-                    {
-                        # Not a mobj.
-                        continue
+                        if ($null -eq $dest)
+                        {
+                            # Not a mobj.
+                            continue
+                        }
+
+                        if ($dest.Type -ne [MobjType]::Teleportman)
+                        {
+                            # Not a teleportman.
+                            continue
+                        }
+
+                        $sector = $dest.Subsector.Sector
+
+                        if ($sector.Number -ne $i)
+                        {
+                            # Wrong sector.
+                            continue
+                        }
+
+                        $oldX = $thing.X
+                        $oldY = $thing.Y
+                        $oldZ = $thing.Z
+
+                        if (-not $this.world.ThingMovement.TeleportMove($thing, $dest.X, $dest.Y))
+                        {
+                            return $false
+                        }
+
+                        # Compatibility fix for Chocolate Doom's implementation.
+                        if ($this.world.Options.GameVersion -ne [GameVersion]::Final)
+                        {
+                            $thing.Z = $thing.FloorZ
+                        }
+
+                        if ($null -ne $thing.Player)
+                        {
+                            $thing.Player.ViewZ = $thing.Z + $thing.Player.ViewHeight
+                        }
+
+                        $ta = $this.world.ThingAllocation
+
+                        # Spawn teleport fog at source position.
+                        $fog1 = $ta.SpawnMobj($oldX, $oldY, $oldZ, [MobjType]::Tfog)
+                        $this.world.StartSound($fog1, [Sfx]::TELEPT, [SfxType]::Misc)
+
+                        # Destination position.
+                        $angle = $dest.Angle
+                        $fog2 = $ta.SpawnMobj($dest.X + 20 * [Trig]::Cos($angle), $dest.Y + 20 * [Trig]::Sin($angle), $thing.Z, [MobjType]::Tfog)
+                        $this.world.StartSound($fog2, [Sfx]::TELEPT, [SfxType]::Misc)
+
+                        if ($null -ne $thing.Player)
+                        {
+                            # Don't move for a bit.
+                            $thing.ReactionTime = 18
+                        }
+
+                        $thing.Angle = $dest.Angle
+                        $thing.MomX = $thing.MomY = $thing.MomZ = [Fixed]::Zero
+
+                        $thing.DisableFrameInterpolationForOneFrame()
+                        if ($null -ne $thing.Player)
+                        {
+                            $thing.Player.DisableFrameInterpolationForOneFrame()
+                        }
+
+                        return $true
+
                     }
-
-                    if ($dest.Type -ne [MobjType]::Teleportman)
-                    {
-                        # Not a teleportman.
-                        continue
-                    }
-
-                    $sector = $dest.Subsector.Sector
-
-                    if ($sector.Number -ne $i)
-                    {
-                        # Wrong sector.
-                        continue
-                    }
-
-                    $oldX = $thing.X
-                    $oldY = $thing.Y
-                    $oldZ = $thing.Z
-
-                    if (-not $this.world.ThingMovement.TeleportMove($thing, $dest.X, $dest.Y))
-                    {
-                        return $false
-                    }
-
-                    # Compatibility fix for Chocolate Doom's implementation.
-                    if ($this.world.Options.GameVersion -ne [GameVersion]::Final)
-                    {
-                        $thing.Z = $thing.FloorZ
-                    }
-
-                    if ($null -ne $thing.Player)
-                    {
-                        $thing.Player.ViewZ = $thing.Z + $thing.Player.ViewHeight
-                    }
-
-                    $ta = $this.world.ThingAllocation
-
-                    # Spawn teleport fog at source position.
-                    $fog1 = $ta.SpawnMobj($oldX, $oldY, $oldZ, [MobjType]::Tfog)
-                    $this.world.StartSound($fog1, [Sfx]::TELEPT, [SfxType]::Misc)
-
-                    # Destination position.
-                    $angle = $dest.Angle
-                    $fog2 = $ta.SpawnMobj($dest.X + 20 * [Trig]::Cos($angle), $dest.Y + 20 * [Trig]::Sin($angle), $thing.Z, [MobjType]::Tfog)
-                    $this.world.StartSound($fog2, [Sfx]::TELEPT, [SfxType]::Misc)
-
-                    if ($null -ne $thing.Player)
-                    {
-                        # Don't move for a bit.
-                        $thing.ReactionTime = 18
-                    }
-
-                    $thing.Angle = $dest.Angle
-                    $thing.MomX = $thing.MomY = $thing.MomZ = [Fixed]::Zero
-
-                    $thing.DisableFrameInterpolationForOneFrame()
-                    if ($null -ne $thing.Player)
-                    {
-                        $thing.Player.DisableFrameInterpolationForOneFrame()
-                    }
-
-                    return $true
                 }
             }
         }
 
         return $false
     }
-    # DoDoor method
+
     [bool] DoDoor([LineDef] $line, [VerticalDoorType] $type) {
         $sectors = $this.world.Map.Sectors
         $setcorNumber = -1
@@ -675,7 +672,6 @@ class SectorAction {
 
             # New door thinker
             $door = [VerticalDoor]::new($this.world)
-            #$this.world.Thinkers.Add($door) #no idea why it fails.
             $this.world.Thinkers.GetType().GetMethod("Add").Invoke($this.world.Thinkers, @($door))
             $sector.SpecialData = $door
             $door.Sector = $sector
@@ -737,7 +733,7 @@ class SectorAction {
 
         return $result
     }
-    # DoLockedDoor method
+
     [bool] DoLockedDoor([LineDef] $line, [VerticalDoorType] $type, [Mobj] $thing) {
         $player = $thing.Player
         if ($null -eq $player) {
@@ -779,7 +775,6 @@ class SectorAction {
         return $this.DoDoor($line, $type)
     }
 
-    # Platform - FindNextHighestFloor method
     [Fixed] FindNextHighestFloor([Sector] $sector, [Fixed] $currentHeight) {
         $height = $currentHeight
         $h = 0
@@ -1037,7 +1032,9 @@ class SectorAction {
                     {
                         $floor.FloorDestHeight = $sector.CeilingHeight
                     }
-                    $floor.FloorDestHeight -= [Fixed]::FromInt(8) * (if ($type -eq [FloorMoveType]::RaiseFloorCrush) { 1 } else { 0 })
+                    if ($type -eq [FloorMoveType]::RaiseFloorCrush) {
+                        $floor.FloorDestHeight -= [Fixed]::FromInt(8)
+                    }
 
                     break
                 }
@@ -1155,7 +1152,7 @@ class SectorAction {
 
         return $result
     }
-    # Stairs method
+
     [bool]BuildStairs([LineDef]$line, [StairType]$type)
     {
         $sectors = $this.world.Map.Sectors
@@ -1261,7 +1258,6 @@ class SectorAction {
         return $result
     }
     
-    # Ceiling Methods
     [bool] DoCeiling([LineDef] $line, [CeilingMoveType] $type) {
         # Reactivate in-stasis ceilings...for certain types.
         switch ($type) {

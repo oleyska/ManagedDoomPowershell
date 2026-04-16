@@ -33,18 +33,24 @@ class SilkUserInput : IUserInput {
             $this.Keyboard = $this.Input.Keyboards[0]
             $this.TrackedKeys = @()
             $this.PreviousKeyStates = @{}
-            foreach ($doomKey in [enum]::GetValues([DoomKey])) {
-                if ($doomKey -in @([DoomKey]::Unknown, [DoomKey]::Count)) {
-                    continue
-                }
+            $doomKeysEnumerable = [enum]::GetValues([DoomKey])
+            if ($null -ne $doomKeysEnumerable) {
+                $doomKeysEnumerator = $doomKeysEnumerable.GetEnumerator()
+                for (; $doomKeysEnumerator.MoveNext(); ) {
+                    $doomKey = $doomKeysEnumerator.Current
+                    if ($doomKey -in @([DoomKey]::Unknown, [DoomKey]::Count)) {
+                        continue
+                    }
 
-                $silkKey = [SilkUserInput]::DoomToSilk($doomKey)
-                if ($silkKey -eq [Silk.NET.Input.Key]::Unknown -or $silkKey -in $this.TrackedKeys) {
-                    continue
-                }
+                    $silkKey = [SilkUserInput]::DoomToSilk($doomKey)
+                    if ($silkKey -eq [Silk.NET.Input.Key]::Unknown -or $silkKey -in $this.TrackedKeys) {
+                        continue
+                    }
 
-                $this.TrackedKeys += $silkKey
-                $this.PreviousKeyStates[$silkKey] = $false
+                    $this.TrackedKeys += $silkKey
+                    $this.PreviousKeyStates[$silkKey] = $false
+
+                }
             }
 
             $this.WeaponKeys = New-Object 'bool[]' 7
@@ -69,17 +75,23 @@ class SilkUserInput : IUserInput {
             return
         }
 
-        foreach ($key in $this.TrackedKeys) {
-            $isPressed = $this.Keyboard.IsKeyPressed($key)
-            $wasPressed = [bool]$this.PreviousKeyStates[$key]
+        $trackedKeysEnumerable = $this.TrackedKeys
+        if ($null -ne $trackedKeysEnumerable) {
+            $trackedKeysEnumerator = $trackedKeysEnumerable.GetEnumerator()
+            for (; $trackedKeysEnumerator.MoveNext(); ) {
+                $key = $trackedKeysEnumerator.Current
+                $isPressed = $this.Keyboard.IsKeyPressed($key)
+                $wasPressed = [bool]$this.PreviousKeyStates[$key]
 
-            if ($isPressed -and -not $wasPressed) {
-                $this.Doom.KeyDown($key)
-            } elseif (-not $isPressed -and $wasPressed) {
-                $this.Doom.KeyUp($key)
+                if ($isPressed -and -not $wasPressed) {
+                    $this.Doom.KeyDown($key)
+                } elseif (-not $isPressed -and $wasPressed) {
+                    $this.Doom.KeyUp($key)
+                }
+
+                $this.PreviousKeyStates[$key] = $isPressed
+
             }
-
-            $this.PreviousKeyStates[$key] = $isPressed
         }
     }
     [void] BuildTicCmd([TicCmd] $cmd) {
@@ -171,16 +183,28 @@ class SilkUserInput : IUserInput {
     }
     
     [bool] IsPressed([Silk.NET.Input.IKeyboard] $keyboard, [KeyBinding] $keyBinding) {
-        foreach ($key in $keyBinding.Keys) {
-            if ($keyboard.IsKeyPressed([SilkUserInput]::DoomToSilk($key))) {
-                return $true
+        $bindingKeysEnumerable = $keyBinding.Keys
+        if ($null -ne $bindingKeysEnumerable) {
+            $bindingKeysEnumerator = $bindingKeysEnumerable.GetEnumerator()
+            for (; $bindingKeysEnumerator.MoveNext(); ) {
+                $key = $bindingKeysEnumerator.Current
+                if ($keyboard.IsKeyPressed([SilkUserInput]::DoomToSilk($key))) {
+                    return $true
+                }
+
             }
         }
     
         if ($this.MouseGrabbed) {
-            foreach ($mouseButton in $keyBinding.MouseButtons) {
-                if ($this.Mouse.IsButtonPressed([Silk.NET.Input.MouseButton]$mouseButton)) {
-                    return $true
+            $bindingMouseButtonsEnumerable = $keyBinding.MouseButtons
+            if ($null -ne $bindingMouseButtonsEnumerable) {
+                $bindingMouseButtonsEnumerator = $bindingMouseButtonsEnumerable.GetEnumerator()
+                for (; $bindingMouseButtonsEnumerator.MoveNext(); ) {
+                    $mouseButton = $bindingMouseButtonsEnumerator.Current
+                    if ($this.Mouse.IsButtonPressed([Silk.NET.Input.MouseButton]$mouseButton)) {
+                        return $true
+                    }
+
                 }
             }
         }

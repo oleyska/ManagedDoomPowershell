@@ -1,8 +1,6 @@
 class DummySpriteLookup : ISpriteLookup {
-    # Fields for sprite definitions and caches
     [SpriteDef[]]$spriteDefs
 
-    # Constructor
     DummySpriteLookup([Wad]$wad) {
         $temp = [System.Collections.Generic.Dictionary[string, System.Collections.Generic.List[SpriteInfo]]]::new()
         for ($i = 0; $i -lt [int][Sprite]::Count; $i++) {
@@ -11,40 +9,21 @@ class DummySpriteLookup : ISpriteLookup {
 
         $cache = New-Object 'System.Collections.Generic.Dictionary[int, Patch]'
 
-        foreach ($lump in [DummySpriteLookup]::EnumerateSprites($wad)) {
-            $name = $wad.LumpInfos[$lump].Name.Substring(0, 4)
+        $dummySpriteLumpsEnumerable = [DummySpriteLookup]::EnumerateSprites($wad)
+        if ($null -ne $dummySpriteLumpsEnumerable) {
+            $dummySpriteLumpsEnumerator = $dummySpriteLumpsEnumerable.GetEnumerator()
+            for (; $dummySpriteLumpsEnumerator.MoveNext(); ) {
+                $lump = $dummySpriteLumpsEnumerator.Current
+                $name = $wad.LumpInfos[$lump].Name.Substring(0, 4)
 
-            if (-not $temp.ContainsKey($name)) {
-                continue
-            }
-
-            $list = $temp[$name]
-            
-            $frame = ([int][char]$wad.LumpInfos[$lump].Name[4]) - ([int][char]'A')
-            $rotation = ([int][char]$wad.LumpInfos[$lump].Name[5]) - ([int][char]'0')
-
-            while ($list.Count -lt $frame + 1) {
-                $list.Add([SpriteInfo]::new())
-            }
-
-            if ($rotation -eq 0) {
-                for ($i = 0; $i -lt 8; $i++) {
-                    if ($null -eq $list[$frame].Patches[$i]) {
-                        $list[$frame].Patches[$i] = [DummyData]::GetPatch()
-                        $list[$frame].Flip[$i] = $false
-                    }
+                if (-not $temp.ContainsKey($name)) {
+                    continue
                 }
-            }
-            else {
-                if ($null -eq $list[$frame].Patches[$rotation - 1]) {
-                    $list[$frame].Patches[$rotation - 1] = [DummyData]::GetPatch()
-                    $list[$frame].Flip[$rotation - 1] = $false
-                }
-            }
 
-            if ($wad.LumpInfos[$lump].Name.Length -eq 8) {
-                $frame = ([int][char]$wad.LumpInfos[$lump].Name[6]) - ([int][char]'A')
-                $rotation = ([int][char]$wad.LumpInfos[$lump].Name[7]) - ([int][char]'0')
+                $list = $temp[$name]
+
+                $frame = ([int][char]$wad.LumpInfos[$lump].Name[4]) - ([int][char]'A')
+                $rotation = ([int][char]$wad.LumpInfos[$lump].Name[5]) - ([int][char]'0')
 
                 while ($list.Count -lt $frame + 1) {
                     $list.Add([SpriteInfo]::new())
@@ -54,16 +33,41 @@ class DummySpriteLookup : ISpriteLookup {
                     for ($i = 0; $i -lt 8; $i++) {
                         if ($null -eq $list[$frame].Patches[$i]) {
                             $list[$frame].Patches[$i] = [DummyData]::GetPatch()
-                            $list[$frame].Flip[$i] = $true
+                            $list[$frame].Flip[$i] = $false
                         }
                     }
                 }
                 else {
                     if ($null -eq $list[$frame].Patches[$rotation - 1]) {
                         $list[$frame].Patches[$rotation - 1] = [DummyData]::GetPatch()
-                        $list[$frame].Flip[$rotation - 1] = $true
+                        $list[$frame].Flip[$rotation - 1] = $false
                     }
                 }
+
+                if ($wad.LumpInfos[$lump].Name.Length -eq 8) {
+                    $frame = ([int][char]$wad.LumpInfos[$lump].Name[6]) - ([int][char]'A')
+                    $rotation = ([int][char]$wad.LumpInfos[$lump].Name[7]) - ([int][char]'0')
+
+                    while ($list.Count -lt $frame + 1) {
+                        $list.Add([SpriteInfo]::new())
+                    }
+
+                    if ($rotation -eq 0) {
+                        for ($i = 0; $i -lt 8; $i++) {
+                            if ($null -eq $list[$frame].Patches[$i]) {
+                                $list[$frame].Patches[$i] = [DummyData]::GetPatch()
+                                $list[$frame].Flip[$i] = $true
+                            }
+                        }
+                    }
+                    else {
+                        if ($null -eq $list[$frame].Patches[$rotation - 1]) {
+                            $list[$frame].Patches[$rotation - 1] = [DummyData]::GetPatch()
+                            $list[$frame].Flip[$rotation - 1] = $true
+                        }
+                    }
+                }
+
             }
         }
 
@@ -84,7 +88,6 @@ class DummySpriteLookup : ISpriteLookup {
         }
     }
 
-    # Enumerate sprites
     static [int[]] EnumerateSprites([Wad]$wad) {
         $spriteSection = $false
         $lumpList = @()
@@ -113,11 +116,8 @@ class DummySpriteLookup : ISpriteLookup {
         return $lumpList  # Return as an array instead of streaming values
     }
 
-    # Get sprite definition by sprite index
     [SpriteDef] Get_Item([Sprite]$sprite) {
         return $this.spriteDefs[[int]$sprite]
     }
-
-    # SpriteInfo helper class
     
 }

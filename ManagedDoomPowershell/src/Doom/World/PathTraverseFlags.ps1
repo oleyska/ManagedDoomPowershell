@@ -1,3 +1,4 @@
+[Flags()]
 enum PathTraverseFlags
 {
     AddLines = 1

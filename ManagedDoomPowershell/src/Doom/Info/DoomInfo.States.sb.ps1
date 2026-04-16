@@ -979,8 +979,14 @@ class States {
     }
 
     static [void] List() {
-        foreach ($state in [States]::All) {
-            [Console]::WriteLine("$($state.Number): $($state.Sprite) - Next: $($state.Next)")
+        $doomStatesEnumerable = [States]::All
+        if ($null -ne $doomStatesEnumerable) {
+            $doomStatesEnumerator = $doomStatesEnumerable.GetEnumerator()
+            for (; $doomStatesEnumerator.MoveNext(); ) {
+                $state = $doomStatesEnumerator.Current
+                [Console]::WriteLine("$($state.Number): $($state.Sprite) - Next: $($state.Next)")
+
+            }
         }
     }
 

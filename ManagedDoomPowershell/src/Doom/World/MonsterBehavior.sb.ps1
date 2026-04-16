@@ -379,14 +379,20 @@ class MonsterBehavior {
         }
 
         if (($this.world.Random.Next() -band 1) -ne 0) {
-            foreach ($dir in $allDirs) {
-                if ($dir -eq $turnaround) {
-                    continue
-                }
+            $candidateDirectionsEnumerable = $allDirs
+            if ($null -ne $candidateDirectionsEnumerable) {
+                $candidateDirectionsEnumerator = $candidateDirectionsEnumerable.GetEnumerator()
+                for (; $candidateDirectionsEnumerator.MoveNext(); ) {
+                    $dir = $candidateDirectionsEnumerator.Current
+                    if ($dir -eq $turnaround) {
+                        continue
+                    }
 
-                $actor.MoveDir = $dir
-                if ($this.TryWalk($actor)) {
-                    return
+                    $actor.MoveDir = $dir
+                    if ($this.TryWalk($actor)) {
+                        return
+                    }
+
                 }
             }
         } else {
@@ -1126,10 +1132,16 @@ class MonsterBehavior {
         # Count total number of skulls currently on the level.
         $count = 0
 
-        foreach ($thinker in $this.world.Thinkers) {
-            $mobj = $thinker -as [Mobj]
-            if ($null -ne $mobj -and $mobj.Type -eq [MobjType]::Skull) {
-                $count++
+        $skullCountThinkersEnumerable = $this.world.Thinkers
+        if ($null -ne $skullCountThinkersEnumerable) {
+            $skullCountThinkersEnumerator = $skullCountThinkersEnumerable.GetEnumerator()
+            for (; $skullCountThinkersEnumerator.MoveNext(); ) {
+                $thinker = $skullCountThinkersEnumerator.Current
+                $mobj = $thinker -as [Mobj]
+                if ($null -ne $mobj -and $mobj.Type -eq [MobjType]::Skull) {
+                    $count++
+                }
+
             }
         }
 
@@ -1240,10 +1252,16 @@ class MonsterBehavior {
         }
 
         # Scan the remaining thinkers to see if all bosses are dead.
-        foreach ($thinker in $this.world.Thinkers) {
-            $mo2 = $thinker -as [Mobj]
-            if ($null -ne $mo2 -and $mo2 -ne $actor -and $mo2.Type -eq $actor.Type -and $mo2.Health -gt 0) {
-                return
+        $bossDeathThinkersEnumerable = $this.world.Thinkers
+        if ($null -ne $bossDeathThinkersEnumerable) {
+            $bossDeathThinkersEnumerator = $bossDeathThinkersEnumerable.GetEnumerator()
+            for (; $bossDeathThinkersEnumerator.MoveNext(); ) {
+                $thinker = $bossDeathThinkersEnumerator.Current
+                $mo2 = $thinker -as [Mobj]
+                if ($null -ne $mo2 -and $mo2 -ne $actor -and $mo2.Type -eq $actor.Type -and $mo2.Health -gt 0) {
+                    return
+                }
+
             }
         }
 
@@ -1293,10 +1311,16 @@ class MonsterBehavior {
         $this.Fall($actor)
 
         # Scan the remaining thinkers to see if all Keens are dead.
-        foreach ($thinker in $this.world.Thinkers) {
-            $mo2 = $thinker -as [Mobj]
-            if ($null -ne $mo2 -and $mo2 -ne $actor -and $mo2.Type -eq $actor.Type -and $mo2.Health -gt 0) {
-                return
+        $keenDeathThinkersEnumerable = $this.world.Thinkers
+        if ($null -ne $keenDeathThinkersEnumerable) {
+            $keenDeathThinkersEnumerator = $keenDeathThinkersEnumerable.GetEnumerator()
+            for (; $keenDeathThinkersEnumerator.MoveNext(); ) {
+                $thinker = $keenDeathThinkersEnumerator.Current
+                $mo2 = $thinker -as [Mobj]
+                if ($null -ne $mo2 -and $mo2 -ne $actor -and $mo2.Type -eq $actor.Type -and $mo2.Health -gt 0) {
+                    return
+                }
+
             }
         }
 
@@ -1321,11 +1345,17 @@ class MonsterBehavior {
         $this.brainTargetCount = 0
         $this.currentBrainTarget = 0
 
-        foreach ($thinker in $this.world.Thinkers) {
-            $mobj = $thinker -as [Mobj]
-            if ($null -ne $mobj -and $mobj.Type -eq [MobjType]::Bosstarget) {
-                $this.brainTargets[$this.brainTargetCount] = $mobj
-                $this.brainTargetCount++
+        $brainTargetThinkersEnumerable = $this.world.Thinkers
+        if ($null -ne $brainTargetThinkersEnumerable) {
+            $brainTargetThinkersEnumerator = $brainTargetThinkersEnumerable.GetEnumerator()
+            for (; $brainTargetThinkersEnumerator.MoveNext(); ) {
+                $thinker = $brainTargetThinkersEnumerator.Current
+                $mobj = $thinker -as [Mobj]
+                if ($null -ne $mobj -and $mobj.Type -eq [MobjType]::Bosstarget) {
+                    $this.brainTargets[$this.brainTargetCount] = $mobj
+                    $this.brainTargetCount++
+                }
+
             }
         }
 

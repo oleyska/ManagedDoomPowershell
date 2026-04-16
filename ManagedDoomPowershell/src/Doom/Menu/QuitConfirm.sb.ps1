@@ -43,7 +43,7 @@ class QuitConfirm : MenuDef {
             $list = [DoomInfo]::QuitMessages.Doom
         }
 
-        $this.text = (($list[$this.random.Next() % $list.Count]).tostring() + "`n`n" + ([DoomInfo]::Strings.PRESSYN)) #split on \n ?
+        $this.text = (($list[$this.random.Next() % $list.Count]).ToString() + "`n`n" + ([DoomInfo]::Strings.PRESSYN)).Split("`n")
     }
 
     [bool] DoEvent([DoomEvent] $e) {

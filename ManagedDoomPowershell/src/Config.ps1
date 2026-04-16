@@ -71,8 +71,9 @@ class Config {
             [Console]::Write("Restore settings: ")
 
             $dic = @{}
-            Get-Content $path | ForEach-Object {
-                $split = $_ -split '=', 2
+            $lines = @(Get-Content $path)
+            for ($lineIndex = 0; $lineIndex -lt $lines.Count; $lineIndex++) {
+                $split = $lines[$lineIndex] -split '=', 2
                 if ($split.Count -eq 2) {
                     $dic[$split[0].Trim()] = $split[1].Trim()
                 }

@@ -1,11 +1,9 @@
 class DummyData {
-    # Static variables
     static [Patch]$dummyPatch
     static [System.Collections.Generic.Dictionary[int, Texture]]$dummyTextures = @{}
     static [Flat] $dummyFlat
     static [Flat] $dummySkyFlat
 
-    # GetPatch method
     static [Patch] GetPatch() {
         if ($null -ne [dummydata]::dummyPatch) {
             return [dummydata]::dummyPatch
@@ -33,7 +31,6 @@ class DummyData {
         }
     }
 
-    # GetTexture method
     static [Texture] GetTexture([int]$height) {
         if ([DummyData]::dummyTextures.ContainsKey($height)) {
             return [DummyData]::dummyTextures[$height]
@@ -45,7 +42,6 @@ class DummyData {
         }
     }
 
-    # GetFlat method
     static [Flat] GetFlat() {
         if ($null -ne [dummydata]::dummyFlat ) {
             return [dummydata]::dummyFlat
@@ -66,7 +62,6 @@ class DummyData {
         }
     }
 
-    # GetSkyFlat method
     static [Flat] GetSkyFlat() {
         if ($null -ne [dummydata]::dummySkyFlat) {
             return [dummydata]::dummySkyFlat

@@ -1,3 +1,4 @@
+[Flags()]
 enum CheatFlags
 {
     None = 0

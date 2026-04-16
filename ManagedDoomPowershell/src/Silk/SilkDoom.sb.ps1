@@ -333,7 +333,7 @@ class SilkDoom : IDisposable {
                 $ms = [int]$sleepTime.TotalMilliseconds
                 if ($ms -gt 0) {
                     $sleepStart = [System.Diagnostics.Stopwatch]::GetTimestamp()
-                    [WinMmTimer]::Sleep($ms)
+                    [System.Threading.Thread]::Sleep($ms)
                     $this.benchmarkSleepTicks += [System.Diagnostics.Stopwatch]::GetTimestamp() - $sleepStart
                 }
             } else {

@@ -1,5 +1,4 @@
 class BoxEx {
-    # Methods for Fixed array
     static [Fixed] Top([Fixed[]]$box) {
         return $box[[Box]::Top]
     }
@@ -16,7 +15,6 @@ class BoxEx {
         return $box[[Box]::Right]
     }
 
-    # Methods for int array
     static [int] Top([int[]]$box) {
         return $box[[Box]::Top]
     }

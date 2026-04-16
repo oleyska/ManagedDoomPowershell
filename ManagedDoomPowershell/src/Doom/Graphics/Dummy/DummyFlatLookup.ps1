@@ -1,12 +1,10 @@
 class DummyFlatLookup : IFlatLookup {
-    # Static fields and variables
     [Flat[]]$flatList
     [System.Collections.Generic.Dictionary[string, Flat]]$nameToFlat
     [System.Collections.Generic.Dictionary[string, int]]$nameToNumber
     [int]$skyFlatNumber
     [Flat]$skyFlat
 
-    # Constructor
     DummyFlatLookup([Wad]$wad) {
         $firstFlat = $wad.GetLumpNumber("F_START") + 1
         $lastFlat = $wad.GetLumpNumber("F_END") - 1
@@ -34,7 +32,6 @@ class DummyFlatLookup : IFlatLookup {
         $this.skyFlat = $this.nameToFlat["F_SKY1"]
     }
 
-    # GetNumber method
     [int] GetNumber([string]$name) {
         if ($this.nameToNumber.ContainsKey($name)) {
             return $this.nameToNumber[$name]
@@ -43,12 +40,10 @@ class DummyFlatLookup : IFlatLookup {
         }
     }
 
-    # GetEnumerator method
     [System.Collections.IEnumerator] GetEnumerator() {
         return ($this.flatList).GetEnumerator()
     }
 
-    # IEnumerable GetEnumerator method
     [System.Collections.IEnumerator] IEnumerable_GetEnumerator() {
         return $this.flatList.GetEnumerator()
     }

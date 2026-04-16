@@ -5,15 +5,20 @@ class TextInput {
     [ScriptBlock]$canceled
     [TextInputState]$state
 
-
     TextInput([char[]]$initialText, 
               [ScriptBlock]$typed, 
               [ScriptBlock]$finished, 
               [ScriptBlock]$canceled) {
         $this.text = [System.Collections.Generic.List[char]]::new()
         if ($null -ne $initialText) {
-            foreach ($ch in $initialText) {
-                $this.text.Add($ch)
+            $initialTextCharactersEnumerable = $initialText
+            if ($null -ne $initialTextCharactersEnumerable) {
+                $initialTextCharactersEnumerator = $initialTextCharactersEnumerable.GetEnumerator()
+                for (; $initialTextCharactersEnumerator.MoveNext(); ) {
+                    $ch = $initialTextCharactersEnumerator.Current
+                    $this.text.Add($ch)
+
+                }
             }
         }
         $this.typed = $typed
@@ -22,7 +27,6 @@ class TextInput {
         $this.state = [TextInputState]::Typing
     }
 
-    # DoEvent method (handles events)
     [bool] DoEvent([DoomEvent]$e) {
         $ch = [DoomKeyEx]::GetChar($e.Key)
 

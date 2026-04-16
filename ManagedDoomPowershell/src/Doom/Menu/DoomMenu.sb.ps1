@@ -19,7 +19,6 @@ class DoomMenu {
     [int] $selectedEpisode
     [SaveSlots] $saveSlots
 
-    # Constructor
     DoomMenu([Doom] $doom) {
         $this.doom = $doom
         $menu = $this
@@ -142,7 +141,6 @@ class DoomMenu {
         $this.saveSlots = [SaveSlots]::new()
     }
 
-    # Method for handling events
     [bool] DoEvent([DoomEvent] $e) {
         if ($this.active) {
             if ($this.current.DoEvent($e)) {
@@ -173,7 +171,6 @@ class DoomMenu {
             }
         }
         
-        # Method to update menu states
         Update() {
             $this.tics++
         
@@ -186,18 +183,15 @@ class DoomMenu {
             }
         }
         
-        # Method to change the current menu
         SetCurrent([MenuDef] $next) {
             $this.current = $next
             $this.current.Open()
         }
         
-        # Method to open the menu
         Open() {
             $this.active = $true
         }
         
-        # Method to close the menu
         Close() {
             $this.active = $false
         
@@ -206,45 +200,38 @@ class DoomMenu {
             }
         }
         
-        # Method to start sound
         StartSound([Sfx] $sfx) {
             $this.doom.Options.Sound.StartSound($sfx)
         }
         
-        # Method to notify save failure
         NotifySaveFailed() {
             $this.SetCurrent($this.saveFailed)
         }
         
-        # Method to show help screen
         ShowHelpScreen() {
             $this.SetCurrent($this.help)
             $this.Open()
             $this.StartSound([Sfx]::SWTCHN)
         }
         
-        # Method to show save screen
         ShowSaveScreen() {
             $this.SetCurrent($this.save)
             $this.Open()
             $this.StartSound([Sfx]::SWTCHN)
         }
         
-        # Method to show load screen
         ShowLoadScreen() {
             $this.SetCurrent($this.load)
             $this.Open()
             $this.StartSound([Sfx]::SWTCHN)
         }
         
-        # Method to show volume control
         ShowVolumeControl() {
             $this.SetCurrent($this.volume)
             $this.Open()
             $this.StartSound([Sfx]::SWTCHN)
         }
         
-        # Method for quick save
         QuickSave() {
             if ($this.save.LastSaveSlot -eq -1) {
                 $this.ShowSaveScreen()
@@ -261,7 +248,6 @@ class DoomMenu {
             }
         }
         
-        # Method for quick load
         QuickLoad() {
             if ($this.save.LastSaveSlot -eq -1) {
                 $pak = [PressAnyKey]::new($this, [DoomInfo]::Strings.QSAVESPOT, $null)
@@ -281,14 +267,12 @@ class DoomMenu {
             }
         }
         
-        # Method to end the game
         EndGame() {
             $this.SetCurrent($this.endGameConfirm)
             $this.Open()
             $this.StartSound([Sfx]::SWTCHN)
         }
         
-        # Method to quit the game
         Quit() {
             $this.SetCurrent($this.quitConfirm)
             $this.Open()
@@ -299,25 +283,21 @@ class DoomMenu {
         
 
     class MenuDef {
-        # Field
         [DoomMenu]$menu
     
-        # Constructor
         MenuDef([DoomMenu]$menu) {
             $this.menu = $menu
         }
     
-        # Virtual method for opening the menu
+
         [void] Open() {
-            # This method can be overridden in derived classes
+
         }
     
-        # Virtual method for updating the menu
         [void] Update() {
-            # This method can be overridden in derived classes
+
         }
     
-        # Abstract method for handling events
         [bool] DoEvent([DoomEvent]$e) {
             throw "DoEvent method must be implemented in derived classes."
         }
@@ -356,13 +336,19 @@ class SelectableMenu : MenuDef {
     }
 
     [void] Open() {
-        foreach ($item in $this.items) {
-            if ($item -is [ToggleMenuItem]) {
-                $item.FReset()
-            }
+        $menuItemsEnumerable = $this.items
+        if ($null -ne $menuItemsEnumerable) {
+            $menuItemsEnumerator = $menuItemsEnumerable.GetEnumerator()
+            for (; $menuItemsEnumerator.MoveNext(); ) {
+                $item = $menuItemsEnumerator.Current
+                if ($item -is [ToggleMenuItem]) {
+                    $item.FReset()
+                }
 
-            if ($item -is [SliderMenuItem]) {
-                $item.FReset()
+                if ($item -is [SliderMenuItem]) {
+                    $item.FReset()
+                }
+
             }
         }
     }

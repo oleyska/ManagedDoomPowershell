@@ -48,12 +48,18 @@ class TextureLookup : ITextureLookup {
 
     [void] InitSwitchList() {
         $list = [System.Collections.Generic.List[int]]::new()
-        foreach ($tuple in [DoomInfo]::SwitchNames) {
-            $texNum1 = $this.GetNumber($tuple.Item1)
-            $texNum2 = $this.GetNumber($tuple.Item2)
-            if ($texNum1 -ne -1 -and $texNum2 -ne -1) {
-                $list.Add($texNum1)
-                $list.Add($texNum2)
+        $switchNameTuplesEnumerable = [DoomInfo]::SwitchNames
+        if ($null -ne $switchNameTuplesEnumerable) {
+            $switchNameTuplesEnumerator = $switchNameTuplesEnumerable.GetEnumerator()
+            for (; $switchNameTuplesEnumerator.MoveNext(); ) {
+                $tuple = $switchNameTuplesEnumerator.Current
+                $texNum1 = $this.GetNumber($tuple.Item1)
+                $texNum2 = $this.GetNumber($tuple.Item2)
+                if ($texNum1 -ne -1 -and $texNum2 -ne -1) {
+                    $list.Add($texNum1)
+                    $list.Add($texNum2)
+                }
+
             }
         }
         $this.SwitchList = $list.ToArray()

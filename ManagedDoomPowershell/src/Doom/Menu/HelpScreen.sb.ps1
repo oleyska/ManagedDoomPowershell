@@ -1,10 +1,8 @@
 #Needs [MenuDef]
 class HelpScreen : MenuDef {
-    # Fields
     [int]$pageCount
     [int]$page
 
-    # Constructor
     HelpScreen([DoomMenu]$menu) : base($menu) {
         if ($menu.Options.GameMode -eq [GameMode]::Shareware) {
             $this.pageCount = 2
@@ -13,12 +11,10 @@ class HelpScreen : MenuDef {
         }
     }
 
-    # Override Open method
     [void] Open() {
         $this.page = $this.pageCount - 1
     }
 
-    # Override DoEvent method
     [bool] DoEvent([DoomEvent]$e) {
         if ($e.Type -ne [EventType]::KeyDown) {
             return $true

@@ -92,8 +92,14 @@ class DoomDebug {
 
     static [int] GetSectorHash([World] $world) {
         $hash = 0
-        foreach ($sector in $world.Map.Sectors) {
-            $hash = [DoomDebug]::CombineHash($hash, [DoomDebug]::GetSectorHash($sector))
+        $worldMapSectorsEnumerable = $world.Map.Sectors
+        if ($null -ne $worldMapSectorsEnumerable) {
+            $worldMapSectorsEnumerator = $worldMapSectorsEnumerable.GetEnumerator()
+            for (; $worldMapSectorsEnumerator.MoveNext(); ) {
+                $sector = $worldMapSectorsEnumerator.Current
+                $hash = [DoomDebug]::CombineHash($hash, [DoomDebug]::GetSectorHash($sector))
+
+            }
         }
         return $hash
     }

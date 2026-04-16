@@ -34,18 +34,30 @@ class ConfigUtilities {
     static [string] GetDefaultIwadPath() {
         $exeDirectory = [ConfigUtilities]::GetExeDirectory()
 
-        foreach ($name in [ConfigUtilities]::iwadNames) {
-            $path = [System.IO.Path]::Combine($exeDirectory, $name)
-            if (Test-Path $path) {
-                return $path
+        $configIwadNamesEnumerable = [ConfigUtilities]::iwadNames
+        if ($null -ne $configIwadNamesEnumerable) {
+            $configIwadNamesEnumerator = $configIwadNamesEnumerable.GetEnumerator()
+            for (; $configIwadNamesEnumerator.MoveNext(); ) {
+                $name = $configIwadNamesEnumerator.Current
+                $path = [System.IO.Path]::Combine($exeDirectory, $name)
+                if (Test-Path $path) {
+                    return $path
+                }
+
             }
         }
 
         $currentDirectory = Get-Location
-        foreach ($name in [ConfigUtilities]::iwadNames) {
-            $path = [System.IO.Path]::Combine($currentDirectory, $name)
-            if (Test-Path $path) {
-                return $path
+        $configIwadNamesEnumerable = [ConfigUtilities]::iwadNames
+        if ($null -ne $configIwadNamesEnumerable) {
+            $configIwadNamesEnumerator = $configIwadNamesEnumerable.GetEnumerator()
+            for (; $configIwadNamesEnumerator.MoveNext(); ) {
+                $name = $configIwadNamesEnumerator.Current
+                $path = [System.IO.Path]::Combine($currentDirectory, $name)
+                if (Test-Path $path) {
+                    return $path
+                }
+
             }
         }
 

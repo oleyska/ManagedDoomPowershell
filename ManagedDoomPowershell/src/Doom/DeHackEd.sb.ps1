@@ -19,12 +19,23 @@ class DeHackEd {
             [DoomInfo]::Strings.PRESSKEY.GetHashCode() | Out-Null
             [Console]::Write("Load DeHackEd patches: ")
 
-            foreach ($fileName in $fileNames) {
-                $lastFileName = $fileName
-                [DeHackEd]::ProcessLines((Get-Content $fileName))
+            $dehackedFileNamesEnumerable = $fileNames
+            if ($null -ne $dehackedFileNamesEnumerable) {
+                $dehackedFileNamesEnumerator = $dehackedFileNamesEnumerable.GetEnumerator()
+                for (; $dehackedFileNamesEnumerator.MoveNext(); ) {
+                    $fileName = $dehackedFileNamesEnumerator.Current
+                    $lastFileName = $fileName
+                    [DeHackEd]::ProcessLines((Get-Content $fileName))
+
+                }
             }
 
-            [Console]::WriteLine("OK (" + ($fileNames | ForEach-Object { [System.IO.Path]::GetFileName($_) } -join ", ") + ")")
+            $displayFileNames = [System.Collections.Generic.List[string]]::new()
+            for ($fileNameIndex = 0; $fileNameIndex -lt $fileNames.Count; $fileNameIndex++) {
+                $displayFileNames.Add([System.IO.Path]::GetFileName($fileNames[$fileNameIndex]))
+            }
+
+            [Console]::WriteLine("OK (" + ($displayFileNames.ToArray() -join ", ") + ")")
         }
         catch {
             [Console]::WriteLine("Failed")
@@ -78,21 +89,27 @@ class DeHackEd {
         $lastBlock = [Block]::None
         $lastBlockLine = 0
 
-        foreach ($line in $lines) {
-            $lineNumber++
+        $dehackedLinesEnumerable = $lines
+        if ($null -ne $dehackedLinesEnumerable) {
+            $dehackedLinesEnumerator = $dehackedLinesEnumerable.GetEnumerator()
+            for (; $dehackedLinesEnumerator.MoveNext(); ) {
+                $line = $dehackedLinesEnumerator.Current
+                $lineNumber++
 
-            if ($line -match "^#") { continue }
+                if ($line -match "^#") { continue }
 
-            $split = $line -split ' '
-            $blockType = [DeHackEd]::GetBlockType($split)
+                $split = $line -split ' '
+                $blockType = [DeHackEd]::GetBlockType($split)
 
-            if ($blockType -eq [Block]::None) {
-                $data += $line
-            } else {
-                [DeHackEd]::ProcessBlock($lastBlock, $data, $lastBlockLine)
-                $data = @($line)
-                $lastBlock = $blockType
-                $lastBlockLine = $lineNumber
+                if ($blockType -eq [Block]::None) {
+                    $data += $line
+                } else {
+                    [DeHackEd]::ProcessBlock($lastBlock, $data, $lastBlockLine)
+                    $data = @($line)
+                    $lastBlock = $blockType
+                    $lastBlockLine = $lineNumber
+                }
+
             }
         }
 
@@ -166,9 +183,15 @@ class DeHackEd {
         return $true
     }
     static [bool] IsNumber([string] $value) {
-        foreach ($ch in $value.ToCharArray()) {
-            if ($ch -lt '0' -or $ch -gt '9') {
-                return $false
+        $numericCharactersEnumerable = $value.ToCharArray()
+        if ($null -ne $numericCharactersEnumerable) {
+            $numericCharactersEnumerator = $numericCharactersEnumerable.GetEnumerator()
+            for (; $numericCharactersEnumerator.MoveNext(); ) {
+                $ch = $numericCharactersEnumerator.Current
+                if ($ch -lt '0' -or $ch -gt '9') {
+                    return $false
+                }
+
             }
         }
         return $true
@@ -176,10 +199,16 @@ class DeHackEd {
     static [hashtable] GetKeyValuePairs([System.Collections.Generic.List[string]] $data) {
         $dic = @{}
     
-        foreach ($line in $data) {
-            $split = $line -split '='
-            if ($split.Length -eq 2) {
-                $dic[$split[0].Trim()] = $split[1].Trim()
+        $keyValueLinesEnumerable = $data
+        if ($null -ne $keyValueLinesEnumerable) {
+            $keyValueLinesEnumerator = $keyValueLinesEnumerable.GetEnumerator()
+            for (; $keyValueLinesEnumerator.MoveNext(); ) {
+                $line = $keyValueLinesEnumerator.Current
+                $split = $line -split '='
+                if ($split.Length -eq 2) {
+                    $dic[$split[0].Trim()] = $split[1].Trim()
+                }
+
             }
         }
     

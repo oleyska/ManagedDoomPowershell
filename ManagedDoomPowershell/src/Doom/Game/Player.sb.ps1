@@ -129,8 +129,14 @@ class Player {
         $this.ColorMap = 0
 
         # Reset player sprites
-        foreach ($psp in $this.PlayerSprites) {
-            $psp.Clear()
+        $playerSpritesEnumerable = $this.PlayerSprites
+        if ($null -ne $playerSpritesEnumerable) {
+            $playerSpritesEnumerator = $playerSpritesEnumerable.GetEnumerator()
+            for (; $playerSpritesEnumerator.MoveNext(); ) {
+                $psp = $playerSpritesEnumerator.Current
+                $psp.Clear()
+
+            }
         }
 
         $this.DidSecret = $false
@@ -224,8 +230,14 @@ class Player {
         $this.FixedColorMap = 0
         $this.ColorMap = 0
 
-        foreach ($psp in $this.PlayerSprites) {
-            $psp.Clear()
+        $playerSpritesEnumerable = $this.PlayerSprites
+        if ($null -ne $playerSpritesEnumerable) {
+            $playerSpritesEnumerator = $playerSpritesEnumerable.GetEnumerator()
+            for (; $playerSpritesEnumerator.MoveNext(); ) {
+                $psp = $playerSpritesEnumerator.Current
+                $psp.Clear()
+
+            }
         }
 
         $this.DidSecret = $false

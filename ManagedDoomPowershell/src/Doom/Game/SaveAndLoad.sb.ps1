@@ -213,97 +213,103 @@ class SaveGame {
                 }
             }
 
-            foreach ($type in @("CeilingMove", "VerticalDoor", "FloorMove", "Platform", "LightFlash", "StrobeFlash", "GlowingLight")) {
-                $special = $thinker -as ([Type]$type)
-                if ($null -ne $special) {
-                    $specialClass = switch ($type) {
-                        "CeilingMove" { [SpecialClass]::Ceiling }
-                        "VerticalDoor" { [SpecialClass]::Door }
-                        "FloorMove" { [SpecialClass]::Floor }
-                        "Platform" { [SpecialClass]::Plat }
-                        "LightFlash" { [SpecialClass]::Flash }
-                        "StrobeFlash" { [SpecialClass]::Strobe }
-                        "GlowingLight" { [SpecialClass]::Glow }
+            $savedThinkerTypesEnumerable = @("CeilingMove", "VerticalDoor", "FloorMove", "Platform", "LightFlash", "StrobeFlash", "GlowingLight")
+            if ($null -ne $savedThinkerTypesEnumerable) {
+                $savedThinkerTypesEnumerator = $savedThinkerTypesEnumerable.GetEnumerator()
+                for (; $savedThinkerTypesEnumerator.MoveNext(); ) {
+                    $type = $savedThinkerTypesEnumerator.Current
+                    $special = $thinker -as ([Type]$type)
+                    if ($null -ne $special) {
+                        $specialClass = switch ($type) {
+                            "CeilingMove" { [SpecialClass]::Ceiling }
+                            "VerticalDoor" { [SpecialClass]::Door }
+                            "FloorMove" { [SpecialClass]::Floor }
+                            "Platform" { [SpecialClass]::Plat }
+                            "LightFlash" { [SpecialClass]::Flash }
+                            "StrobeFlash" { [SpecialClass]::Strobe }
+                            "GlowingLight" { [SpecialClass]::Glow }
+                        }
+                        $this.Data[$this.Ptr++] = [byte]$specialClass
+                        $this.PadPointer()
+                        [SaveGame]::WriteThinkerState($this.Data, $this.Ptr + 8, $special.ThinkerState)
+
+                        switch ($type) {
+                            "CeilingMove" {
+                                [SaveGame]::Write($this.Data, $this.Ptr + 12, [int]$special.Type)
+                                [SaveGame]::Write($this.Data, $this.Ptr + 16, $special.Sector.Number)
+                                [SaveGame]::Write($this.Data, $this.Ptr + 20, $special.BottomHeight.Data)
+                                [SaveGame]::Write($this.Data, $this.Ptr + 24, $special.TopHeight.Data)
+                                [SaveGame]::Write($this.Data, $this.Ptr + 28, $special.Speed.Data)
+                                [SaveGame]::Write($this.Data, $this.Ptr + 32, ($special.Crush -eq $true) ? 1 : 0)
+                                [SaveGame]::Write($this.Data, $this.Ptr + 36, $special.Direction)
+                                [SaveGame]::Write($this.Data, $this.Ptr + 40, $special.Tag)
+                                [SaveGame]::Write($this.Data, $this.Ptr + 44, $special.OldDirection)
+                                $this.Ptr += 48
+                            }
+                            "VerticalDoor" {
+                                [SaveGame]::Write($this.Data, $this.Ptr + 12, [int]$special.Type)
+                                [SaveGame]::Write($this.Data, $this.Ptr + 16, $special.Sector.Number)
+                                [SaveGame]::Write($this.Data, $this.Ptr + 20, $special.TopHeight.Data)
+                                [SaveGame]::Write($this.Data, $this.Ptr + 24, $special.Speed.Data)
+                                [SaveGame]::Write($this.Data, $this.Ptr + 28, $special.Direction)
+                                [SaveGame]::Write($this.Data, $this.Ptr + 32, $special.TopWait)
+                                [SaveGame]::Write($this.Data, $this.Ptr + 36, $special.TopCountDown)
+                                $this.Ptr += 40
+                            }
+                            "FloorMove" {
+                                [SaveGame]::Write($this.Data, $this.Ptr + 12, [int]$special.Type)
+                                [SaveGame]::Write($this.Data, $this.Ptr + 16, ($special.Crush -eq $true) ? 1 : 0)
+                                [SaveGame]::Write($this.Data, $this.Ptr + 20, $special.Sector.Number)
+                                [SaveGame]::Write($this.Data, $this.Ptr + 24, $special.Direction)
+                                [SaveGame]::Write($this.Data, $this.Ptr + 28, [int]$special.NewSpecial)
+                                [SaveGame]::Write($this.Data, $this.Ptr + 32, $special.Texture)
+                                [SaveGame]::Write($this.Data, $this.Ptr + 36, $special.FloorDestHeight.Data)
+                                [SaveGame]::Write($this.Data, $this.Ptr + 40, $special.Speed.Data)
+                                $this.Ptr += 44
+                            }
+                            "Platform" {
+                                [SaveGame]::Write($this.Data, $this.Ptr + 12, $special.Sector.Number)
+                                [SaveGame]::Write($this.Data, $this.Ptr + 16, $special.Speed.Data)
+                                [SaveGame]::Write($this.Data, $this.Ptr + 20, $special.Low.Data)
+                                [SaveGame]::Write($this.Data, $this.Ptr + 24, $special.High.Data)
+                                [SaveGame]::Write($this.Data, $this.Ptr + 28, $special.Wait)
+                                [SaveGame]::Write($this.Data, $this.Ptr + 32, $special.Count)
+                                [SaveGame]::Write($this.Data, $this.Ptr + 36, [int]$special.Status)
+                                [SaveGame]::Write($this.Data, $this.Ptr + 40, [int]$special.OldStatus)
+                                [SaveGame]::Write($this.Data, $this.Ptr + 44, ($special.Crush -eq $true) ? 1 : 0)
+                                [SaveGame]::Write($this.Data, $this.Ptr + 48, $special.Tag)
+                                [SaveGame]::Write($this.Data, $this.Ptr + 52, [int]$special.Type)
+                                $this.Ptr += 56
+                            }
+                            "LightFlash" {
+                                [SaveGame]::Write($this.Data, $this.Ptr + 12, $special.Sector.Number)
+                                [SaveGame]::Write($this.Data, $this.Ptr + 16, $special.Count)
+                                [SaveGame]::Write($this.Data, $this.Ptr + 20, $special.MaxLight)
+                                [SaveGame]::Write($this.Data, $this.Ptr + 24, $special.MinLight)
+                                [SaveGame]::Write($this.Data, $this.Ptr + 28, $special.MaxTime)
+                                [SaveGame]::Write($this.Data, $this.Ptr + 32, $special.MinTime)
+                                $this.Ptr += 36
+                            }
+                            "StrobeFlash" {
+                                [SaveGame]::Write($this.Data, $this.Ptr + 12, $special.Sector.Number)
+                                [SaveGame]::Write($this.Data, $this.Ptr + 16, $special.Count)
+                                [SaveGame]::Write($this.Data, $this.Ptr + 20, $special.MinLight)
+                                [SaveGame]::Write($this.Data, $this.Ptr + 24, $special.MaxLight)
+                                [SaveGame]::Write($this.Data, $this.Ptr + 28, $special.DarkTime)
+                                [SaveGame]::Write($this.Data, $this.Ptr + 32, $special.BrightTime)
+                                $this.Ptr += 36
+                            }
+                            "GlowingLight" {
+                                [SaveGame]::Write($this.Data, $this.Ptr + 12, $special.Sector.Number)
+                                [SaveGame]::Write($this.Data, $this.Ptr + 16, $special.MinLight)
+                                [SaveGame]::Write($this.Data, $this.Ptr + 20, $special.MaxLight)
+                                [SaveGame]::Write($this.Data, $this.Ptr + 24, $special.Direction)
+                                $this.Ptr += 28
+                            }
+                        }
+                        continue
                     }
-                    $this.Data[$this.Ptr++] = [byte]$specialClass
-                    $this.PadPointer()
-                    [SaveGame]::WriteThinkerState($this.Data, $this.Ptr + 8, $special.ThinkerState)
-                    
-                    switch ($type) {
-                        "CeilingMove" {
-                            [SaveGame]::Write($this.Data, $this.Ptr + 12, [int]$special.Type)
-                            [SaveGame]::Write($this.Data, $this.Ptr + 16, $special.Sector.Number)
-                            [SaveGame]::Write($this.Data, $this.Ptr + 20, $special.BottomHeight.Data)
-                            [SaveGame]::Write($this.Data, $this.Ptr + 24, $special.TopHeight.Data)
-                            [SaveGame]::Write($this.Data, $this.Ptr + 28, $special.Speed.Data)
-                            [SaveGame]::Write($this.Data, $this.Ptr + 32, ($special.Crush -eq $true) ? 1 : 0)
-                            [SaveGame]::Write($this.Data, $this.Ptr + 36, $special.Direction)
-                            [SaveGame]::Write($this.Data, $this.Ptr + 40, $special.Tag)
-                            [SaveGame]::Write($this.Data, $this.Ptr + 44, $special.OldDirection)
-                            $this.Ptr += 48
-                        }
-                        "VerticalDoor" {
-                            [SaveGame]::Write($this.Data, $this.Ptr + 12, [int]$special.Type)
-                            [SaveGame]::Write($this.Data, $this.Ptr + 16, $special.Sector.Number)
-                            [SaveGame]::Write($this.Data, $this.Ptr + 20, $special.TopHeight.Data)
-                            [SaveGame]::Write($this.Data, $this.Ptr + 24, $special.Speed.Data)
-                            [SaveGame]::Write($this.Data, $this.Ptr + 28, $special.Direction)
-                            [SaveGame]::Write($this.Data, $this.Ptr + 32, $special.TopWait)
-                            [SaveGame]::Write($this.Data, $this.Ptr + 36, $special.TopCountDown)
-                            $this.Ptr += 40
-                        }
-                        "FloorMove" {
-                            [SaveGame]::Write($this.Data, $this.Ptr + 12, [int]$special.Type)
-                            [SaveGame]::Write($this.Data, $this.Ptr + 16, ($special.Crush -eq $true) ? 1 : 0)
-                            [SaveGame]::Write($this.Data, $this.Ptr + 20, $special.Sector.Number)
-                            [SaveGame]::Write($this.Data, $this.Ptr + 24, $special.Direction)
-                            [SaveGame]::Write($this.Data, $this.Ptr + 28, [int]$special.NewSpecial)
-                            [SaveGame]::Write($this.Data, $this.Ptr + 32, $special.Texture)
-                            [SaveGame]::Write($this.Data, $this.Ptr + 36, $special.FloorDestHeight.Data)
-                            [SaveGame]::Write($this.Data, $this.Ptr + 40, $special.Speed.Data)
-                            $this.Ptr += 44
-                        }
-                        "Platform" {
-                            [SaveGame]::Write($this.Data, $this.Ptr + 12, $special.Sector.Number)
-                            [SaveGame]::Write($this.Data, $this.Ptr + 16, $special.Speed.Data)
-                            [SaveGame]::Write($this.Data, $this.Ptr + 20, $special.Low.Data)
-                            [SaveGame]::Write($this.Data, $this.Ptr + 24, $special.High.Data)
-                            [SaveGame]::Write($this.Data, $this.Ptr + 28, $special.Wait)
-                            [SaveGame]::Write($this.Data, $this.Ptr + 32, $special.Count)
-                            [SaveGame]::Write($this.Data, $this.Ptr + 36, [int]$special.Status)
-                            [SaveGame]::Write($this.Data, $this.Ptr + 40, [int]$special.OldStatus)
-                            [SaveGame]::Write($this.Data, $this.Ptr + 44, ($special.Crush -eq $true) ? 1 : 0)
-                            [SaveGame]::Write($this.Data, $this.Ptr + 48, $special.Tag)
-                            [SaveGame]::Write($this.Data, $this.Ptr + 52, [int]$special.Type)
-                            $this.Ptr += 56
-                        }
-                        "LightFlash" {
-                            [SaveGame]::Write($this.Data, $this.Ptr + 12, $special.Sector.Number)
-                            [SaveGame]::Write($this.Data, $this.Ptr + 16, $special.Count)
-                            [SaveGame]::Write($this.Data, $this.Ptr + 20, $special.MaxLight)
-                            [SaveGame]::Write($this.Data, $this.Ptr + 24, $special.MinLight)
-                            [SaveGame]::Write($this.Data, $this.Ptr + 28, $special.MaxTime)
-                            [SaveGame]::Write($this.Data, $this.Ptr + 32, $special.MinTime)
-                            $this.Ptr += 36
-                        }
-                        "StrobeFlash" {
-                            [SaveGame]::Write($this.Data, $this.Ptr + 12, $special.Sector.Number)
-                            [SaveGame]::Write($this.Data, $this.Ptr + 16, $special.Count)
-                            [SaveGame]::Write($this.Data, $this.Ptr + 20, $special.MinLight)
-                            [SaveGame]::Write($this.Data, $this.Ptr + 24, $special.MaxLight)
-                            [SaveGame]::Write($this.Data, $this.Ptr + 28, $special.DarkTime)
-                            [SaveGame]::Write($this.Data, $this.Ptr + 32, $special.BrightTime)
-                            $this.Ptr += 36
-                        }
-                        "GlowingLight" {
-                            [SaveGame]::Write($this.Data, $this.Ptr + 12, $special.Sector.Number)
-                            [SaveGame]::Write($this.Data, $this.Ptr + 16, $special.MinLight)
-                            [SaveGame]::Write($this.Data, $this.Ptr + 20, $special.MaxLight)
-                            [SaveGame]::Write($this.Data, $this.Ptr + 24, $special.Direction)
-                            $this.Ptr += 28
-                        }
-                    }
-                    continue
+
                 }
             }
 

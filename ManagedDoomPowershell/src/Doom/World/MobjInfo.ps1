@@ -33,13 +33,19 @@ class MobjInfo {
     # ParentContainsErrorRecordException: An error occurred while creating the pipeline.
     # replacing all types to string,int and bool works, all up to speed works so it's not the types..
     MobjInfo([hashtable]$params) {
-        foreach ($key in $params.Keys) {
-            if ($this.PSObject.Properties.Name -contains $key) {
-                if ($key -eq "Flags") {
-                    $this.$key = [MobjFlags]$params[$key]  # explicit casting.
-                } else {
-                    $this.$key = $params[$key]
+        $parameterKeysEnumerable = $params.Keys
+        if ($null -ne $parameterKeysEnumerable) {
+            $parameterKeysEnumerator = $parameterKeysEnumerable.GetEnumerator()
+            for (; $parameterKeysEnumerator.MoveNext(); ) {
+                $key = $parameterKeysEnumerator.Current
+                if ($this.PSObject.Properties.Name -contains $key) {
+                    if ($key -eq "Flags") {
+                        $this.$key = [MobjFlags]$params[$key]  # explicit casting.
+                    } else {
+                        $this.$key = $params[$key]
+                    }
                 }
+
             }
         }
     }

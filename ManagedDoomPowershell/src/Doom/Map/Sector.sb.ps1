@@ -1,8 +1,6 @@
 class Sector {
-    # Static field for data size
     static [int]$dataSize = 26
 
-    # Fields for sector properties
     [int]$number
     [Fixed]$floorHeight
     [Fixed]$ceilingHeight
@@ -11,7 +9,6 @@ class Sector {
     [int]$lightLevel
     [SectorSpecial]$special
     [int]$tag
-
     [int]$soundTraversed
     [Mobj]$soundTarget
     [int[]]$blockBox
@@ -20,9 +17,9 @@ class Sector {
     [Mobj]$thingList
     [Thinker]$specialData
     [LineDef[]]$lines
-
     [Fixed]$oldFloorHeight
     [Fixed]$oldCeilingHeight
+    
     Sector([int]$number, [Fixed]$floorHeight, [Fixed]$ceilingHeight, [int]$floorFlat, 
            [int]$ceilingFlat, [int]$lightLevel, [SectorSpecial]$special, [int]$tag) {
         $this.number = $number

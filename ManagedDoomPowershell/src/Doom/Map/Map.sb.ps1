@@ -64,12 +64,12 @@ class Map {
 
             if ($options.GameMode -eq [GameMode]::Commercial) {
                 switch ($options.MissionPack) {
-                    ([MissionPack]::Plutonia) { $this.title = [DoomInfo]::MapTitles.Plutonia[$options.Map - 1] }
-                    ([MissionPack]::Tnt) { $this.title = [DoomInfo]::MapTitles.Tnt[$options.Map - 1] }
-                    default { $this.title = [DoomInfo]::MapTitles.Doom2[$options.Map - 1] }
+                    ([MissionPack]::Plutonia) { $this.title = [Map]::ResolveTitle([DoomInfo]::MapTitles.Plutonia[$options.Map - 1]) }
+                    ([MissionPack]::Tnt) { $this.title = [Map]::ResolveTitle([DoomInfo]::MapTitles.Tnt[$options.Map - 1]) }
+                    default { $this.title = [Map]::ResolveTitle([DoomInfo]::MapTitles.Doom2[$options.Map - 1]) }
                 }
             } else {
-                $this.title = [DoomInfo]::MapTitles.Doom[$options.Episode - 1][$options.Map - 1]
+                $this.title = [Map]::ResolveTitle([DoomInfo]::MapTitles.Doom[$options.Episode - 1][$options.Map - 1])
             }
 
             [Console]::WriteLine("OK")
@@ -79,48 +79,81 @@ class Map {
         }
     }
 
+    hidden static [string] ResolveTitle([object] $title) {
+        $null = [DoomInfo]::Strings
+
+        if ($title -is [DoomString]) {
+            return $title.ToString()
+        }
+
+        $name = [string]$title
+        if ([DoomString]::NameTable.ContainsKey($name)) {
+            return [DoomString]::NameTable[$name].ToString()
+        }
+
+        return $name
+    }
+
     hidden [void] GroupLines() {
         $sectorLines = New-Object 'System.Collections.Generic.List[LineDef]'
         $boundingBox = New-Object 'Fixed[]' 4
 
-        foreach ($line in $this.lines) {
-            if ($line.Special -ne 0) {
-                $so = [Mobj]::new($this.world)
-                $so.X = ($line.Vertex1.X + $line.Vertex2.X) / 2
-                $so.Y = ($line.Vertex1.Y + $line.Vertex2.Y) / 2
-                $line.SoundOrigin = $so
+        $mapLinesEnumerable = $this.lines
+        if ($null -ne $mapLinesEnumerable) {
+            $mapLinesEnumerator = $mapLinesEnumerable.GetEnumerator()
+            for (; $mapLinesEnumerator.MoveNext(); ) {
+                $line = $mapLinesEnumerator.Current
+                if ($line.Special -ne 0) {
+                    $so = [Mobj]::new($this.world)
+                    $so.X = ($line.Vertex1.X + $line.Vertex2.X) / 2
+                    $so.Y = ($line.Vertex1.Y + $line.Vertex2.Y) / 2
+                    $line.SoundOrigin = $so
+                }
+
             }
         }
 
-        foreach ($sector in $this.sectors) {
-            $sectorLines.Clear()
-            [Box]::Clear($boundingBox)
+        $mapSectorsEnumerable = $this.sectors
+        if ($null -ne $mapSectorsEnumerable) {
+            $mapSectorsEnumerator = $mapSectorsEnumerable.GetEnumerator()
+            for (; $mapSectorsEnumerator.MoveNext(); ) {
+                $sector = $mapSectorsEnumerator.Current
+                $sectorLines.Clear()
+                [Box]::Clear($boundingBox)
 
-            foreach ($line in $this.lines) {
-                if (($line.FrontSector -eq $sector) -or ($line.BackSector -eq $sector)) {
-                    $sectorLines.Add($line)
-                    [Box]::AddPoint($boundingBox, $line.Vertex1.X, $line.Vertex1.Y)
-                    [Box]::AddPoint($boundingBox, $line.Vertex2.X, $line.Vertex2.Y)
+                $sectorCandidateLinesEnumerable = $this.lines
+                if ($null -ne $sectorCandidateLinesEnumerable) {
+                    $sectorCandidateLinesEnumerator = $sectorCandidateLinesEnumerable.GetEnumerator()
+                    for (; $sectorCandidateLinesEnumerator.MoveNext(); ) {
+                        $line = $sectorCandidateLinesEnumerator.Current
+                        if (($line.FrontSector -eq $sector) -or ($line.BackSector -eq $sector)) {
+                            $sectorLines.Add($line)
+                            [Box]::AddPoint($boundingBox, $line.Vertex1.X, $line.Vertex1.Y)
+                            [Box]::AddPoint($boundingBox, $line.Vertex2.X, $line.Vertex2.Y)
+                        }
+
+                    }
                 }
+
+                $sector.Lines = $sectorLines.ToArray()
+                $sector.SoundOrigin = [Mobj]::new($this.world)
+                $sector.SoundOrigin.X = ($boundingBox[[Box]::Right] + $boundingBox[[Box]::Left]) / 2
+                $sector.SoundOrigin.Y = ($boundingBox[[Box]::Top] + $boundingBox[[Box]::Bottom]) / 2
+
+                $sector.BlockBox = New-Object int[] 4
+                $block = ($boundingBox[[Box]::Top] - $this.blockMap.OriginY + [GameConst]::MaxThingRadius).Data -shr [BlockMap]::FracToBlockShift
+                $sector.BlockBox[[Box]::Top] = [math]::Min($block, $this.blockMap.Height - 1)
+
+                $block = ($boundingBox[[Box]::Bottom] - $this.blockMap.OriginY - [GameConst]::MaxThingRadius).Data -shr [BlockMap]::FracToBlockShift
+                $sector.BlockBox[[Box]::Bottom] = [math]::Max($block, 0)
+
+                $block = ($boundingBox[[Box]::Right] - $this.blockMap.OriginX + [GameConst]::MaxThingRadius).Data -shr [BlockMap]::FracToBlockShift
+                $sector.BlockBox[[Box]::Right] = [math]::Min($block, $this.blockMap.Width - 1)
+
+                $block = ($boundingBox[[Box]::Left] - $this.blockMap.OriginX - [GameConst]::MaxThingRadius).Data -shr [BlockMap]::FracToBlockShift
+                $sector.BlockBox[[Box]::Left] = [math]::Max($block, 0)
+
             }
-
-            $sector.Lines = $sectorLines.ToArray()
-            $sector.SoundOrigin = [Mobj]::new($this.world)
-            $sector.SoundOrigin.X = ($boundingBox[[Box]::Right] + $boundingBox[[Box]::Left]) / 2
-            $sector.SoundOrigin.Y = ($boundingBox[[Box]::Top] + $boundingBox[[Box]::Bottom]) / 2
-
-            $sector.BlockBox = New-Object int[] 4
-            $block = ($boundingBox[[Box]::Top] - $this.blockMap.OriginY + [GameConst]::MaxThingRadius).Data -shr [BlockMap]::FracToBlockShift
-            $sector.BlockBox[[Box]::Top] = [math]::Min($block, $this.blockMap.Height - 1)
-
-            $block = ($boundingBox[[Box]::Bottom] - $this.blockMap.OriginY - [GameConst]::MaxThingRadius).Data -shr [BlockMap]::FracToBlockShift
-            $sector.BlockBox[[Box]::Bottom] = [math]::Max($block, 0)
-
-            $block = ($boundingBox[[Box]::Right] - $this.blockMap.OriginX + [GameConst]::MaxThingRadius).Data -shr [BlockMap]::FracToBlockShift
-            $sector.BlockBox[[Box]::Right] = [math]::Min($block, $this.blockMap.Width - 1)
-
-            $block = ($boundingBox[[Box]::Left] - $this.blockMap.OriginX - [GameConst]::MaxThingRadius).Data -shr [BlockMap]::FracToBlockShift
-            $sector.BlockBox[[Box]::Left] = [math]::Max($block, 0)
         }
     }
 

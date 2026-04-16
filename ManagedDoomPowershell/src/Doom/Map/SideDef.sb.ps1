@@ -1,8 +1,6 @@
 class SideDef {
-    # Static field for data size
     static [int]$dataSize = 30
 
-    # Fields to store SideDef information
     [Fixed]$textureOffset
     [Fixed]$rowOffset
     [int]$topTexture
@@ -10,7 +8,6 @@ class SideDef {
     [int]$middleTexture
     [Sector]$sector
 
-    # Constructor to initialize SideDef object
     SideDef([Fixed]$textureOffset, [Fixed]$rowOffset, [int]$topTexture, [int]$bottomTexture, [int]$middleTexture, [Sector]$sector) {
         $this.textureOffset = $textureOffset
         $this.rowOffset = $rowOffset
@@ -20,7 +17,6 @@ class SideDef {
         $this.sector = $sector
     }
 
-    # Static method to create SideDef from data
     static [SideDef] FromData([byte[]]$data, [int]$offset, [ITextureLookup]$textures, [Sector[]]$sectors) {
         $mTextureOffset = [BitConverter]::ToInt16($data, $offset)
         $mRowOffset = [BitConverter]::ToInt16($data, $offset + 2)
@@ -39,7 +35,6 @@ class SideDef {
         )
     }
 
-    # Static method to create SideDef array from Wad
     static [SideDef[]] FromWad([Wad]$wad, [int]$lump, [ITextureLookup]$textures, [Sector[]]$sectors) {
         $length = $wad.GetLumpSize($lump)
         if ($length % [SideDef]::dataSize -ne 0) {

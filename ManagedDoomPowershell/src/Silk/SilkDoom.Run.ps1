@@ -41,7 +41,7 @@ class SilkDoom {
                         $sleepTime = $gameTime - $sw.Elapsed
                         $ms = [int]$sleepTime.TotalMilliseconds
                         if ($ms -gt 0) {
-                            [WinMmTimer]::Sleep($ms)
+                            [System.Threading.Thread]::Sleep($ms)
                         }
                     }
                 } else {

@@ -14,13 +14,10 @@ class Reject {
         $this.sectorCount = $sectorCount
     }
 
-    # Static method to create a Reject object from Wad
     [Reject] static FromWad([Wad]$wad, [int]$lump, [Sector[]]$sectors) {
-        # Static method: No need for $this
         return [Reject]::new($wad.ReadLump($lump), $sectors.Length)
     }
 
-    # Instance method to check the reject table
     [bool] Check([Sector]$sector1, [Sector]$sector2) {
         $s1 = $sector1.Number
         $s2 = $sector2.Number

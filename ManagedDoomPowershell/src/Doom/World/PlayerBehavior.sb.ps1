@@ -225,7 +225,7 @@ class PlayerBehavior {
     }
 
     [void] MovePlayerSprites([Player]$player) {
-        for ($i = 0; $i -lt 2; $i++) {
+        for ($i = 0; $i -lt [int][PlayerSprite]::Count; $i++) {
             $psp = $player.PlayerSprites[$i]
             if ($null -ne $psp.State -and $psp.Tics -ne -1) {
                 $psp.Tics--
@@ -234,6 +234,9 @@ class PlayerBehavior {
                 }
             }
         }
+
+        $player.PlayerSprites[[int][PlayerSprite]::Flash].Sx = $player.PlayerSprites[[int][PlayerSprite]::Weapon].Sx
+        $player.PlayerSprites[[int][PlayerSprite]::Flash].Sy = $player.PlayerSprites[[int][PlayerSprite]::Weapon].Sy
     }
 
     [void] SetPlayerSprite([Player]$player, [int]$position, [MobjState]$state) {

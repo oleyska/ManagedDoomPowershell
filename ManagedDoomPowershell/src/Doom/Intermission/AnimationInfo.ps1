@@ -25,7 +25,6 @@ class AnimationInfo {
         $this.data = $data
     }
 
-    # Static property for Episodes
     static [System.Collections.Generic.IReadOnlyList[System.Collections.Generic.IReadOnlyList[AnimationInfo]]] $Episodes = @(
         # Episode 0
         @(

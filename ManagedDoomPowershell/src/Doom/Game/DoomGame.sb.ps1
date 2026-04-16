@@ -70,14 +70,30 @@ class DoomGame {
             }
         }
 
+        for ($i = 0; $i -lt [Player]::MaxPlayerCount; $i++) {
+            if ($players[$i].InGame -and (($players[$i].Cmd.Buttons -band [TicCmdButtons]::Special) -ne 0)) {
+                if (($players[$i].Cmd.Buttons -band [TicCmdButtons]::SpecialMask) -eq [TicCmdButtons]::Pause) {
+                    $this.paused = -not $this.paused
+                    if ($this.paused) {
+                        $this.options.Sound.Pause()
+                    }
+                    else {
+                        $this.options.Sound.Resume()
+                    }
+                }
+            }
+        }
+
         $updateResult = [UpdateResult]::None
 
         switch ($this.gameState) {
             ([GameState]::Level) {
-                $updateResult = $this.world.Update()
-                if ($updateResult -eq [UpdateResult]::Completed) {
-                    $this.gameAction = [GameAction]::Completed
-                    $updateResult = [UpdateResult]::None
+                if (-not $this.paused -or -not $this.world.DoneFirstTic) {
+                    $updateResult = $this.world.Update()
+                    if ($updateResult -eq [UpdateResult]::Completed) {
+                        $this.gameAction = [GameAction]::Completed
+                        $updateResult = [UpdateResult]::None
+                    }
                 }
             }
 
@@ -120,9 +136,15 @@ class DoomGame {
         $this.gameState = [GameState]::Level
         $this.State = $this.gameState
 
-        foreach ($player in $this.options.Players) {
-            if ($player.InGame -and $player.PlayerState -eq [PlayerState]::Dead) {
-                $player.PlayerState = [PlayerState]::Reborn
+        $optionsPlayersEnumerable = $this.options.Players
+        if ($null -ne $optionsPlayersEnumerable) {
+            $optionsPlayersEnumerator = $optionsPlayersEnumerable.GetEnumerator()
+            for (; $optionsPlayersEnumerator.MoveNext(); ) {
+                $player = $optionsPlayersEnumerator.Current
+                if ($player.InGame -and $player.PlayerState -eq [PlayerState]::Dead) {
+                    $player.PlayerState = [PlayerState]::Reborn
+                }
+
             }
         }
 
@@ -152,9 +174,15 @@ class DoomGame {
 
     [void] DoCompleted() {
         $this.gameAction = [GameAction]::Nothing
-        foreach ($player in $this.options.Players) {
-            if ($player.InGame) {
-                $player.FinishLevel()
+        $optionsPlayersEnumerable = $this.options.Players
+        if ($null -ne $optionsPlayersEnumerable) {
+            $optionsPlayersEnumerator = $optionsPlayersEnumerable.GetEnumerator()
+            for (; $optionsPlayersEnumerator.MoveNext(); ) {
+                $player = $optionsPlayersEnumerator.Current
+                if ($player.InGame) {
+                    $player.FinishLevel()
+                }
+
             }
         }
         $this.gameState = [GameState]::Intermission
@@ -183,8 +211,14 @@ class DoomGame {
         $this.options.Map = [math]::Clamp($map, 1, 32)
         $this.options.Random.Clear()
 
-        foreach ($player in $this.options.Players) {
-            $player.PlayerState = [PlayerState]::Reborn
+        $optionsPlayersEnumerable = $this.options.Players
+        if ($null -ne $optionsPlayersEnumerable) {
+            $optionsPlayersEnumerator = $optionsPlayersEnumerable.GetEnumerator()
+            for (; $optionsPlayersEnumerator.MoveNext(); ) {
+                $player = $optionsPlayersEnumerator.Current
+                $player.PlayerState = [PlayerState]::Reborn
+
+            }
         }
 
         $this.DoLoadLevel()

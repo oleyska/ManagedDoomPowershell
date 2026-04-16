@@ -2,7 +2,7 @@ class Doom {
     [CommandLineArgs]$args
     [Config]$config
     [GameContent]$content
-    [IVideo]$video # originally ivideo
+    [IVideo]$video
     [ISound]$sound
     [IMusic]$music
     [IUserInput]$userInput
@@ -156,29 +156,35 @@ class Doom {
             return
         }
 
-        foreach ($e in $this.events) {
-            if ($this.menu.DoEvent($e)) {
-                continue
-            }
-
-            if ($e.Type -eq [EventType]::KeyDown) {
-                if ($this.CheckFunctionKey($e.Key)) {
-                    continue
-                }
-            }
-
-            if ($this.currentState -eq [DoomState]::Game) {
-                if ($e.Key -eq [DoomKey]::Pause -and $e.Type -eq [EventType]::KeyDown) {
-                    $this.sendPause = $true
+        $doomEventsEnumerable = $this.events
+        if ($null -ne $doomEventsEnumerable) {
+            $doomEventsEnumerator = $doomEventsEnumerable.GetEnumerator()
+            for (; $doomEventsEnumerator.MoveNext(); ) {
+                $e = $doomEventsEnumerator.Current
+                if ($this.menu.DoEvent($e)) {
                     continue
                 }
 
-                if ($this.game.DoEvent($e)) {
-                    continue
+                if ($e.Type -eq [EventType]::KeyDown) {
+                    if ($this.CheckFunctionKey($e.Key)) {
+                        continue
+                    }
                 }
-            }
-            elseif ($this.currentState -eq [DoomState]::DemoPlayback) {
-                $this.demoPlayback.DoEvent($e)
+
+                if ($this.currentState -eq [DoomState]::Game) {
+                    if ($e.Key -eq [DoomKey]::Pause -and $e.Type -eq [EventType]::KeyDown) {
+                        $this.sendPause = $true
+                        continue
+                    }
+
+                    if ($this.game.DoEvent($e)) {
+                        continue
+                    }
+                }
+                elseif ($this.currentState -eq [DoomState]::DemoPlayback) {
+                    $this.demoPlayback.DoEvent($e)
+                }
+
             }
         }
 

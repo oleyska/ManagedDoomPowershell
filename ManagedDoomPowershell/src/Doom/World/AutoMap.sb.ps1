@@ -34,11 +34,17 @@ class AutoMap {
         $this.minY = [Fixed]::MaxValue
         $this.maxY = [Fixed]::MinValue
 
-        foreach ($vertex in $world.Map.Vertices) {
-            if ($vertex.X.toFloat() -lt $this.minX.toFloat()) { $this.minX = $vertex.X }
-            if ($vertex.X.toFloat() -gt $this.maxX.toFloat()) { $this.maxX = $vertex.X }
-            if ($vertex.Y.toFloat() -lt $this.minY.toFloat()) { $this.minY = $vertex.Y }
-            if ($vertex.Y.toFloat() -gt $this.maxY.toFloat()) { $this.maxY = $vertex.Y }
+        $mapVerticesEnumerable = $world.Map.Vertices
+        if ($null -ne $mapVerticesEnumerable) {
+            $mapVerticesEnumerator = $mapVerticesEnumerable.GetEnumerator()
+            for (; $mapVerticesEnumerator.MoveNext(); ) {
+                $vertex = $mapVerticesEnumerator.Current
+                if ($vertex.X.toFloat() -lt $this.minX.toFloat()) { $this.minX = $vertex.X }
+                if ($vertex.X.toFloat() -gt $this.maxX.toFloat()) { $this.maxX = $vertex.X }
+                if ($vertex.Y.toFloat() -lt $this.minY.toFloat()) { $this.minY = $vertex.Y }
+                if ($vertex.Y.toFloat() -gt $this.maxY.toFloat()) { $this.maxY = $vertex.Y }
+
+            }
         }
 
         $this.viewX = $this.minX + ($this.maxX - $this.minX) / 2

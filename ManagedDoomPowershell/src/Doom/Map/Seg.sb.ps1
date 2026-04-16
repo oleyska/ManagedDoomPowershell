@@ -1,8 +1,6 @@
 class Seg {
-    # Static field for data size
     static [int]$dataSize = 12
 
-    # Fields to store Seg information
     [Vertex]$vertex1
     [Vertex]$vertex2
     [Fixed]$offset
@@ -12,7 +10,6 @@ class Seg {
     [Sector]$frontSector
     [Sector]$backSector
 
-    # Constructor to initialize Seg object
     Seg([Vertex]$vertex1, [Vertex]$vertex2, [Fixed]$offset, [Angle]$angle, [SideDef]$sideDef, [LineDef]$lineDef, [Sector]$frontSector, [Sector]$backSector) {
         $this.vertex1 = $vertex1
         $this.vertex2 = $vertex2
@@ -24,7 +21,6 @@ class Seg {
         $this.backSector = $backSector
     }
 
-    # Static method to create Seg from data
     static [Seg] FromData([byte[]]$data, [int]$offset, [Vertex[]]$vertices, [LineDef[]]$lines) {
         $vertex1Number = [BitConverter]::ToInt16($data, $offset)
         $vertex2Number = [BitConverter]::ToInt16($data, $offset + 2)
@@ -49,7 +45,6 @@ class Seg {
         )
     }
 
-    # Static method to create Seg array from Wad
     static [Seg[]] FromWad([Wad]$wad, [int]$lump, [Vertex[]]$vertices, [LineDef[]]$lines) {
         $length = $wad.GetLumpSize($lump)
         if ($length % [Seg]::dataSize -ne 0) {

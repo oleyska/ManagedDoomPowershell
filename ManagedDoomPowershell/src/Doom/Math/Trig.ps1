@@ -4,9 +4,6 @@ class Trig {
     static [int] $AngleToFineShift = 19
     static [int] $fineCosineOffset = 8192 / 4
 
-    #static [int[]] $fineTangent = @(0) * 8192
-    #static [int[]] $fineSine = @(0) * 8192
-    #static [uint32[]] $tanToAngleTable = @(0) * 8192
 
     static [Fixed] Tan([Angle] $anglePlus90) {
         $index = $anglePlus90.Data -shr [trig]::AngleToFineShift

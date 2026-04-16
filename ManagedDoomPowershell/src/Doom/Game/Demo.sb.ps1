@@ -61,12 +61,7 @@ class Demo {
         for ($i = 0; $i -lt [Player]::MaxPlayerCount; $i++) {
             if ($players[$i].InGame) {
                 $cmd = $cmds[$i]
-                <#
-                $cmd.ForwardMove = [sbyte]$this.data[$this.p++]
-                $cmd.SideMove = [sbyte]$this.data[$this.p++]
-                $cmd.AngleTurn = [int16]($this.data[$this.p++] -shl 8)
-                $cmd.Buttons = $this.data[$this.p++]
-                #>
+
                 $value = [byte]$this.data[$this.p++]
                 $cmd.ForwardMove = if ($value -gt 127) { [sbyte]($value - 256) } else { [sbyte]$value }
 

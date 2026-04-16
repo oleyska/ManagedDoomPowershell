@@ -227,43 +227,14 @@ class OpeningSequence {
             [Console]::WriteLine(("MobjDump time={0} none" -f $tic))
         } else {
             $nearbyIndex = 0
-            foreach ($entry in $nearestMobjs) {
-                [Console]::WriteLine(("MobjDump time={0} idx={1} type={2} state={3} tics={4} moveCount={5} moveDir={6} reaction={7} threshold={8} targetType={9} pos={10},{11},{12} flags={13} blockIndex={14} prevType={15} nextType={16} dist={17}" -f
-                    $tic,
-                    $nearbyIndex,
-                    $entry.Type,
-                    $entry.State,
-                    $entry.Tics,
-                    $entry.MoveCount,
-                    $entry.MoveDir,
-                    $entry.ReactionTime,
-                    $entry.Threshold,
-                    $entry.TargetType,
-                    $entry.X,
-                    $entry.Y,
-                    $entry.Z,
-                    $entry.Flags,
-                    $entry.BlockIndex,
-                    $entry.PrevType,
-                    $entry.NextType,
-                    $entry.Dist))
-                $nearbyIndex++
-            }
-        }
-        if ($dumpTroops) {
-            $troopEntries = $nearbyEntries |
-                Where-Object { $_.Type -eq [int][MobjType]::Troop -or $_.Type -eq [int][MobjType]::Troopshot } |
-                Sort-Object Dist, Type, X, Y, Z |
-                Select-Object -First 12
-
-            if ($null -eq $troopEntries -or $troopEntries.Count -eq 0) {
-                [Console]::WriteLine(("TroopDump time={0} none" -f $tic))
-            } else {
-                $troopIndex = 0
-                foreach ($entry in $troopEntries) {
-                    [Console]::WriteLine(("TroopDump time={0} idx={1} type={2} state={3} tics={4} moveCount={5} moveDir={6} reaction={7} threshold={8} targetType={9} pos={10},{11},{12} flags={13} dist={14} src={15},{16},{17}" -f
+            $nearestMobjEntriesEnumerable = $nearestMobjs
+            if ($null -ne $nearestMobjEntriesEnumerable) {
+                $nearestMobjEntriesEnumerator = $nearestMobjEntriesEnumerable.GetEnumerator()
+                for (; $nearestMobjEntriesEnumerator.MoveNext(); ) {
+                    $entry = $nearestMobjEntriesEnumerator.Current
+                    [Console]::WriteLine(("MobjDump time={0} idx={1} type={2} state={3} tics={4} moveCount={5} moveDir={6} reaction={7} threshold={8} targetType={9} pos={10},{11},{12} flags={13} blockIndex={14} prevType={15} nextType={16} dist={17}" -f
                         $tic,
-                        $troopIndex,
+                        $nearbyIndex,
                         $entry.Type,
                         $entry.State,
                         $entry.Tics,
@@ -276,11 +247,52 @@ class OpeningSequence {
                         $entry.Y,
                         $entry.Z,
                         $entry.Flags,
-                        $entry.Dist,
-                        $entry.SrcX,
-                        $entry.SrcY,
-                        $entry.SrcZ))
-                    $troopIndex++
+                        $entry.BlockIndex,
+                        $entry.PrevType,
+                        $entry.NextType,
+                        $entry.Dist))
+                    $nearbyIndex++
+
+                }
+            }
+        }
+        if ($dumpTroops) {
+            $troopEntries = $nearbyEntries |
+                Where-Object { $_.Type -eq [int][MobjType]::Troop -or $_.Type -eq [int][MobjType]::Troopshot } |
+                Sort-Object Dist, Type, X, Y, Z |
+                Select-Object -First 12
+
+            if ($null -eq $troopEntries -or $troopEntries.Count -eq 0) {
+                [Console]::WriteLine(("TroopDump time={0} none" -f $tic))
+            } else {
+                $troopIndex = 0
+                $troopEntriesEnumerable = $troopEntries
+                if ($null -ne $troopEntriesEnumerable) {
+                    $troopEntriesEnumerator = $troopEntriesEnumerable.GetEnumerator()
+                    for (; $troopEntriesEnumerator.MoveNext(); ) {
+                        $entry = $troopEntriesEnumerator.Current
+                        [Console]::WriteLine(("TroopDump time={0} idx={1} type={2} state={3} tics={4} moveCount={5} moveDir={6} reaction={7} threshold={8} targetType={9} pos={10},{11},{12} flags={13} dist={14} src={15},{16},{17}" -f
+                            $tic,
+                            $troopIndex,
+                            $entry.Type,
+                            $entry.State,
+                            $entry.Tics,
+                            $entry.MoveCount,
+                            $entry.MoveDir,
+                            $entry.ReactionTime,
+                            $entry.Threshold,
+                            $entry.TargetType,
+                            $entry.X,
+                            $entry.Y,
+                            $entry.Z,
+                            $entry.Flags,
+                            $entry.Dist,
+                            $entry.SrcX,
+                            $entry.SrcY,
+                            $entry.SrcZ))
+                        $troopIndex++
+
+                    }
                 }
             }
         }

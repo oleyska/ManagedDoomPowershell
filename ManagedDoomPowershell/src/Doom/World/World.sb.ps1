@@ -117,8 +117,14 @@ class World {
             }
         }
         $this.Thinkers.UpdateFrameInterpolationInfo()
-        foreach ($sector in $this.Map.Sectors) {
-            $sector.UpdateFrameInterpolationInfo()
+        $worldSectorsEnumerable = $this.Map.Sectors
+        if ($null -ne $worldSectorsEnumerable) {
+            $worldSectorsEnumerator = $worldSectorsEnumerable.GetEnumerator()
+            for (; $worldSectorsEnumerator.MoveNext(); ) {
+                $sector = $worldSectorsEnumerator.Current
+                $sector.UpdateFrameInterpolationInfo()
+
+            }
         }
         for ($i = 0; $i -lt [Player]::MaxPlayerCount; $i++) {
             if ($players[$i].InGame) {
@@ -141,30 +147,36 @@ class World {
 
     [void] LoadThings() {
         $thingIndex = 0
-        foreach ($mt in $this.Map.Things) {
-            $spawn = $true
+        $mapThingsEnumerable = $this.Map.Things
+        if ($null -ne $mapThingsEnumerable) {
+            $mapThingsEnumerator = $mapThingsEnumerable.GetEnumerator()
+            for (; $mapThingsEnumerator.MoveNext(); ) {
+                $mt = $mapThingsEnumerator.Current
+                $spawn = $true
 
-            if ($this.Options.GameMode -ne [GameMode]::Commercial) {
-                switch ($mt.Type) {
-                    68 { $spawn = $false }  # Arachnotron
-                    64 { $spawn = $false }  # Archvile
-                    88 { $spawn = $false }  # Boss Brain
-                    89 { $spawn = $false }  # Boss Shooter
-                    69 { $spawn = $false }  # Hell Knight
-                    67 { $spawn = $false }  # Mancubus
-                    71 { $spawn = $false }  # Pain Elemental
-                    65 { $spawn = $false }  # Former Human Commando
-                    66 { $spawn = $false }  # Revenant
-                    84 { $spawn = $false }  # Wolf SS
+                if ($this.Options.GameMode -ne [GameMode]::Commercial) {
+                    switch ($mt.Type) {
+                        68 { $spawn = $false }  # Arachnotron
+                        64 { $spawn = $false }  # Archvile
+                        88 { $spawn = $false }  # Boss Brain
+                        89 { $spawn = $false }  # Boss Shooter
+                        69 { $spawn = $false }  # Hell Knight
+                        67 { $spawn = $false }  # Mancubus
+                        71 { $spawn = $false }  # Pain Elemental
+                        65 { $spawn = $false }  # Former Human Commando
+                        66 { $spawn = $false }  # Revenant
+                        84 { $spawn = $false }  # Wolf SS
+                    }
                 }
-            }
 
-            if (-not $spawn) {
-                break
-            }
+                if (-not $spawn) {
+                    break
+                }
 
-            $this.ThingAllocation.SpawnMapThing($mt)
-            $thingIndex++
+                $this.ThingAllocation.SpawnMapThing($mt)
+                $thingIndex++
+
+            }
         }
     }
 

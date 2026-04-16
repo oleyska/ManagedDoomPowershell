@@ -14,15 +14,26 @@ class Wad {
             $this.streams = [System.Collections.Generic.List[System.IO.Stream]]::new()
             $this.lumpInfos = [System.Collections.Generic.List[LumpInfo]]::new()
 
-            foreach ($fileName in $fileNames) {
-                $this.AddFile($fileName)
+            $wadFileNamesEnumerable = $fileNames
+            if ($null -ne $wadFileNamesEnumerable) {
+                $wadFileNamesEnumerator = $wadFileNamesEnumerable.GetEnumerator()
+                for (; $wadFileNamesEnumerator.MoveNext(); ) {
+                    $fileName = $wadFileNamesEnumerator.Current
+                    $this.AddFile($fileName)
+
+                }
             }
 
             $this.gameMode = $this.GetGameMode($this.names)
             $this.missionPack = $this.GetMissionPack($this.names)
             $this.gameVersion = $this.GetGameVersion($this.names)
 
-            [Console]::WriteLine("OK ($(($fileNames | ForEach-Object { [System.IO.Path]::GetFileName($_) }) -join ', '))")
+            $displayFileNames = [System.Collections.Generic.List[string]]::new()
+            for ($fileNameIndex = 0; $fileNameIndex -lt $fileNames.Count; $fileNameIndex++) {
+                $displayFileNames.Add([System.IO.Path]::GetFileName($fileNames[$fileNameIndex]))
+            }
+
+            [Console]::WriteLine("OK ($($displayFileNames.ToArray() -join ', '))")
         } catch {
             [Console]::WriteLine("Failed")
             $this.Dispose()
@@ -102,47 +113,71 @@ class Wad {
 
     [void]Dispose() {
         [Console]::WriteLine("Close WAD files.")
-        foreach ($stream in $this.streams) {
-            $stream.Dispose()
+        $wadStreamsEnumerable = $this.streams
+        if ($null -ne $wadStreamsEnumerable) {
+            $wadStreamsEnumerator = $wadStreamsEnumerable.GetEnumerator()
+            for (; $wadStreamsEnumerator.MoveNext(); ) {
+                $stream = $wadStreamsEnumerator.Current
+                $stream.Dispose()
+
+            }
         }
         $this.streams.Clear()
     }
 
     [string]GetGameVersion([System.Collections.Generic.List[string]]$names) {
-        foreach ($name in $names) {
-            switch ($name.ToLower()) {
-                "doom2"{ return "Version109" }
-                "freedoom2" { return "Version109" }
-                "doom" { return "Ultimate" }
-                "doom1" { return "Ultimate" }
-                "freedoom1" { return "Ultimate" }
-                "plutonia" { return "Final" }
-                "tnt" { return "Final" }
+        $gameVersionNamesEnumerable = $names
+        if ($null -ne $gameVersionNamesEnumerable) {
+            $gameVersionNamesEnumerator = $gameVersionNamesEnumerable.GetEnumerator()
+            for (; $gameVersionNamesEnumerator.MoveNext(); ) {
+                $name = $gameVersionNamesEnumerator.Current
+                switch ($name.ToLower()) {
+                    "doom2"{ return "Version109" }
+                    "freedoom2" { return "Version109" }
+                    "doom" { return "Ultimate" }
+                    "doom1" { return "Ultimate" }
+                    "freedoom1" { return "Ultimate" }
+                    "plutonia" { return "Final" }
+                    "tnt" { return "Final" }
+                }
+
             }
         }
         return "Version109"
     }
 
     [string]GetGameMode([System.Collections.Generic.List[string]]$names) {
-        foreach ($name in $names) {
-            switch ($name.ToLower()) {
-                "doom2" { return "Commercial" }
-                "plutonia" { return "Commercial" }
-                "tnt" { return "Commercial" }
-                "freedoom2" { return "Commercial" }
-                "doom" { return "Retail" }
-                "freedoom1" { return "Retail" }
-                "doom1" { return "Shareware" }
+        $gameModeNamesEnumerable = $names
+        if ($null -ne $gameModeNamesEnumerable) {
+            $gameModeNamesEnumerator = $gameModeNamesEnumerable.GetEnumerator()
+            for (; $gameModeNamesEnumerator.MoveNext(); ) {
+                $name = $gameModeNamesEnumerator.Current
+                switch ($name.ToLower()) {
+                    "doom2" { return "Commercial" }
+                    "plutonia" { return "Commercial" }
+                    "tnt" { return "Commercial" }
+                    "freedoom2" { return "Commercial" }
+                    "doom" { return "Retail" }
+                    "freedoom1" { return "Retail" }
+                    "doom1" { return "Shareware" }
+                }
+
             }
         }
         return "Indetermined"
     }
 
     [string] GetMissionPack([System.Collections.Generic.List[string]]$names) {
-        foreach ($name in $names) {
-            switch ($name.ToLower()) {
-                "plutonia" { return "Plutonia" }
-                "tnt" { return "Tnt" }
+        $missionPackNamesEnumerable = $names
+        if ($null -ne $missionPackNamesEnumerable) {
+            $missionPackNamesEnumerator = $missionPackNamesEnumerable.GetEnumerator()
+            for (; $missionPackNamesEnumerator.MoveNext(); ) {
+                $name = $missionPackNamesEnumerator.Current
+                switch ($name.ToLower()) {
+                    "plutonia" { return "Plutonia" }
+                    "tnt" { return "Tnt" }
+                }
+
             }
         }
         return "Doom2"

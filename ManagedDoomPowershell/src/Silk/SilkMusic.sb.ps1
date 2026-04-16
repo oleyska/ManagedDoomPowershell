@@ -97,17 +97,6 @@ class MusStream {
         $this.Reserved = $decoder
 
         if ($this.AudioStream.State -eq [DrippyAL.PlaybackState]::Stopped) {
-            <#
-            $runspace = [System.Management.Automation.Runspaces.RunspaceFactory]::CreateRunspace()
-            $runspace.Open()
-            $powershell = [System.Management.Automation.PowerShell]::Create()
-            $powershell.Runspace = $runspace
-
-            $callback = [Action[short[]]] {
-                param($samples)
-                $powershell.AddScript($scriptBlock).AddArgument($samples).AddArgument($this).Invoke()
-            }
-            #>
             $callback = [Action[short[]]] { param($samples) $this.OnGetData($samples) }
             $this.AudioStream.Play($callback)
         }

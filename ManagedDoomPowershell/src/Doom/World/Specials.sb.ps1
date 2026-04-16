@@ -68,31 +68,43 @@ class Specials {
         $lc = $this.World.LightingChange
         $sa = $this.World.SectorAction
 
-        foreach ($sector in $this.World.Map.Sectors) {
-            if ($sector.Special -eq 0) { continue }
+        $specialSectorsEnumerable = $this.World.Map.Sectors
+        if ($null -ne $specialSectorsEnumerable) {
+            $specialSectorsEnumerator = $specialSectorsEnumerable.GetEnumerator()
+            for (; $specialSectorsEnumerator.MoveNext(); ) {
+                $sector = $specialSectorsEnumerator.Current
+                if ($sector.Special -eq 0) { continue }
 
-            switch ([int]$sector.Special) {
-                1 { $lc.SpawnLightFlash($sector) }
-                2 { $lc.SpawnStrobeFlash($sector, [StrobeFlash]::FastDark, $false) }
-                3 { $lc.SpawnStrobeFlash($sector, [StrobeFlash]::SlowDark, $false) }
-                4 { 
-                    $lc.SpawnStrobeFlash($sector, [StrobeFlash]::FastDark, $false)
-                    $sector.Special = 4 
+                switch ([int]$sector.Special) {
+                    1 { $lc.SpawnLightFlash($sector) }
+                    2 { $lc.SpawnStrobeFlash($sector, [StrobeFlash]::FastDark, $false) }
+                    3 { $lc.SpawnStrobeFlash($sector, [StrobeFlash]::SlowDark, $false) }
+                    4 {
+                        $lc.SpawnStrobeFlash($sector, [StrobeFlash]::FastDark, $false)
+                        $sector.Special = 4
+                    }
+                    8 { $lc.SpawnGlowingLight($sector) }
+                    9 { $this.World.TotalSecrets++ }
+                    10 { $sa.SpawnDoorCloseIn30($sector) }
+                    12 { $lc.SpawnStrobeFlash($sector, [StrobeFlash]::SlowDark, $true) }
+                    13 { $lc.SpawnStrobeFlash($sector, [StrobeFlash]::FastDark, $true) }
+                    14 { $sa.SpawnDoorRaiseIn5Mins($sector) }
+                    17 { $lc.SpawnFireFlicker($sector) }
                 }
-                8 { $lc.SpawnGlowingLight($sector) }
-                9 { $this.World.TotalSecrets++ }
-                10 { $sa.SpawnDoorCloseIn30($sector) }
-                12 { $lc.SpawnStrobeFlash($sector, [StrobeFlash]::SlowDark, $true) }
-                13 { $lc.SpawnStrobeFlash($sector, [StrobeFlash]::FastDark, $true) }
-                14 { $sa.SpawnDoorRaiseIn5Mins($sector) }
-                17 { $lc.SpawnFireFlicker($sector) }
+
             }
         }
 
         $scrollList = @()
-        foreach ($line in $this.World.Map.Lines) {
-            if ($line.Special -eq 48) {
-                $scrollList += $line
+        $scrollSourceLinesEnumerable = $this.World.Map.Lines
+        if ($null -ne $scrollSourceLinesEnumerable) {
+            $scrollSourceLinesEnumerator = $scrollSourceLinesEnumerable.GetEnumerator()
+            for (; $scrollSourceLinesEnumerator.MoveNext(); ) {
+                $line = $scrollSourceLinesEnumerator.Current
+                if ($line.Special -eq 48) {
+                    $scrollList += $line
+                }
+
             }
         }
         $this.ScrollLines = $scrollList
@@ -173,8 +185,14 @@ class Specials {
             }
         }
 
-        foreach ($line in $this.ScrollLines) {
-            $line.FrontSide.TextureOffset += [Fixed]::One
+        $scrollingLinesEnumerable = $this.ScrollLines
+        if ($null -ne $scrollingLinesEnumerable) {
+            $scrollingLinesEnumerator = $scrollingLinesEnumerable.GetEnumerator()
+            for (; $scrollingLinesEnumerator.MoveNext(); ) {
+                $line = $scrollingLinesEnumerator.Current
+                $line.FrontSide.TextureOffset += [Fixed]::One
+
+            }
         }
 
         for ($i = 0; $i -lt [Specials]::MaxButtonCount; $i++) {

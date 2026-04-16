@@ -1,18 +1,14 @@
 class Vertex {
-    # Static field for data size
     static [int]$dataSize = 4
 
-    # Fields to store the x and y coordinates
     [Fixed]$x
     [Fixed]$y
 
-    # Constructor to initialize Vertex object
     Vertex([Fixed]$x, [Fixed]$y) {
         $this.x = $x
         $this.y = $y
     }
 
-    # Static method to create Vertex from data
     static [Vertex] FromData([byte[]]$data, [int]$offset) {
         $mX = [BitConverter]::ToInt16($data, $offset)
         $mY = [BitConverter]::ToInt16($data, $offset + 2)

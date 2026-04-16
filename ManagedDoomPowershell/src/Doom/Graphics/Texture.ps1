@@ -57,25 +57,31 @@ class Texture {
         $columns = New-Object 'Column[][]' $width
         $compositeColumnCount = 0
 
-        foreach ($patch in $patches) {
-            if ($null -eq $patch -or $null -eq $patch.Patch) {
-                continue
-            }
-
-            $left = $patch.OriginX
-            $patchWidth = $patch.Patch.Width
-            $patchColumns = $patch.Patch.Columns
-            $right = $left + $patchWidth
-
-            $start = [Math]::Max($left, 0)
-            $end = [Math]::Min($right, $width)
-
-            for ($x = $start; $x -lt $end; $x++) {
-                $patchCount[$x]++
-                if ($patchCount[$x] -eq 2) {
-                    $compositeColumnCount++
+        $texturePatchesEnumerable = $patches
+        if ($null -ne $texturePatchesEnumerable) {
+            $texturePatchesEnumerator = $texturePatchesEnumerable.GetEnumerator()
+            for (; $texturePatchesEnumerator.MoveNext(); ) {
+                $patch = $texturePatchesEnumerator.Current
+                if ($null -eq $patch -or $null -eq $patch.Patch) {
+                    continue
                 }
-                $columns[$x] = $patchColumns[$x - $patch.OriginX]
+
+                $left = $patch.OriginX
+                $patchWidth = $patch.Patch.Width
+                $patchColumns = $patch.Patch.Columns
+                $right = $left + $patchWidth
+
+                $start = [Math]::Max($left, 0)
+                $end = [Math]::Min($right, $width)
+
+                for ($x = $start; $x -lt $end; $x++) {
+                    $patchCount[$x]++
+                    if ($patchCount[$x] -eq 2) {
+                        $compositeColumnCount++
+                    }
+                    $columns[$x] = $patchColumns[$x - $patch.OriginX]
+                }
+
             }
         }
 
@@ -91,26 +97,32 @@ class Texture {
             if ($patchCount[$x] -ge 2) {
                 $column = [Column]::new(0, $data, $height * $i, $height)
 
-                foreach ($patch in $patches) {
-                    if ($null -eq $patch -or $null -eq $patch.Patch) {
-                        continue
-                    }
+                $overlapTexturePatchesEnumerable = $patches
+                if ($null -ne $overlapTexturePatchesEnumerable) {
+                    $overlapTexturePatchesEnumerator = $overlapTexturePatchesEnumerable.GetEnumerator()
+                    for (; $overlapTexturePatchesEnumerator.MoveNext(); ) {
+                        $patch = $overlapTexturePatchesEnumerator.Current
+                        if ($null -eq $patch -or $null -eq $patch.Patch) {
+                            continue
+                        }
 
-                    $patchWidth = $patch.Patch.Width
-                    $patchColumns = $patch.Patch.Columns
-                    $px = $x - $patch.OriginX
-                    if ($px -lt 0 -or $px -ge $patchWidth) {
-                        continue
-                    }
+                        $patchWidth = $patch.Patch.Width
+                        $patchColumns = $patch.Patch.Columns
+                        $px = $x - $patch.OriginX
+                        if ($px -lt 0 -or $px -ge $patchWidth) {
+                            continue
+                        }
 
-                    $patchColumn = $patchColumns[$px]
-                    [Texture]::DrawColumnInCache(
-                        $patchColumn,
-                        $column.Data,
-                        $column.Offset,
-                        $patch.OriginY,
-                        $height
-                    )
+                        $patchColumn = $patchColumns[$px]
+                        [Texture]::DrawColumnInCache(
+                            $patchColumn,
+                            $column.Data,
+                            $column.Offset,
+                            $patch.OriginY,
+                            $height
+                        )
+
+                    }
                 }
 
                 $columns[$x] = @($column)
@@ -122,25 +134,31 @@ class Texture {
     }
 
     static [void] DrawColumnInCache([Column[]]$source, [byte[]]$destination, [int]$destinationOffset, [int]$destinationY, [int]$destinationHeight) {
-        foreach ($column in $source) {
-            $sourceIndex = $column.Offset
-            $destinationIndex = $destinationOffset + $destinationY + $column.TopDelta
-            $length = $column.Length
+        $sourceColumnsEnumerable = $source
+        if ($null -ne $sourceColumnsEnumerable) {
+            $sourceColumnsEnumerator = $sourceColumnsEnumerable.GetEnumerator()
+            for (; $sourceColumnsEnumerator.MoveNext(); ) {
+                $column = $sourceColumnsEnumerator.Current
+                $sourceIndex = $column.Offset
+                $destinationIndex = $destinationOffset + $destinationY + $column.TopDelta
+                $length = $column.Length
 
-            $topExceedance = -($destinationY + $column.TopDelta)
-            if ($topExceedance -gt 0) {
-                $sourceIndex += $topExceedance
-                $destinationIndex += $topExceedance
-                $length -= $topExceedance
-            }
+                $topExceedance = -($destinationY + $column.TopDelta)
+                if ($topExceedance -gt 0) {
+                    $sourceIndex += $topExceedance
+                    $destinationIndex += $topExceedance
+                    $length -= $topExceedance
+                }
 
-            $bottomExceedance = $destinationY + $column.TopDelta + $column.Length - $destinationHeight
-            if ($bottomExceedance -gt 0) {
-                $length -= $bottomExceedance
-            }
+                $bottomExceedance = $destinationY + $column.TopDelta + $column.Length - $destinationHeight
+                if ($bottomExceedance -gt 0) {
+                    $length -= $bottomExceedance
+                }
 
-            if ($length -gt 0) {
-                [Array]::Copy($column.Data, $sourceIndex, $destination, $destinationIndex, $length)
+                if ($length -gt 0) {
+                    [Array]::Copy($column.Data, $sourceIndex, $destination, $destinationIndex, $length)
+                }
+
             }
         }
     }

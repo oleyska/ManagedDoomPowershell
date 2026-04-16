@@ -68,11 +68,17 @@ class LightingChange {
 
     [int] FindMinSurroundingLight([Sector] $sector, [int] $max) {
         $min = $max
-        foreach ($line in $sector.Lines) {
-            $check = $this.GetNextSector($line, $sector)
+        $sectorLinesEnumerable = $sector.Lines
+        if ($null -ne $sectorLinesEnumerable) {
+            $sectorLinesEnumerator = $sectorLinesEnumerable.GetEnumerator()
+            for (; $sectorLinesEnumerator.MoveNext(); ) {
+                $line = $sectorLinesEnumerator.Current
+                $check = $this.GetNextSector($line, $sector)
 
-            if ($null -ne $check -and $check.LightLevel -lt $min) {
-                $min = $check.LightLevel
+                if ($null -ne $check -and $check.LightLevel -lt $min) {
+                    $min = $check.LightLevel
+                }
+
             }
         }
         return $min

@@ -1,12 +1,11 @@
 class SaveSlots {
-    # Static constants
     [int]$slotCount = 6
     [int]$descriptionSize = 24
 
-    # Fields
+
     [string[]]$slots
 
-    # Private method to read slots
+
     [void] ReadSlots() {
         $this.slots = New-Object string[] $this.slotCount
         $directory = [ConfigUtilities]::GetExeDirectory()
@@ -23,7 +22,6 @@ class SaveSlots {
         }
     }
 
-    # Indexer for SaveSlots
     [string] Get_Item([int]$number) {
         if ($null -eq $this.slots) {
             $this.ReadSlots()
@@ -38,7 +36,6 @@ class SaveSlots {
         $this.slots[$number] = $value
     }
 
-    # Count property for SaveSlots
     [int] Count() {
          return $this.slots.Length 
     }

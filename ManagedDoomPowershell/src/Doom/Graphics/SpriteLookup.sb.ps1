@@ -7,8 +7,10 @@ class SpriteLookup : ISpriteLookup {
 
             $temp = @{}
 
-            [Enum]::GetValues([Sprite]) | ForEach-Object { 
-                $key = [DoomInfo]::SpriteNames.names.Replaced[$_]
+            $spriteValues = [Enum]::GetValues([Sprite])
+            for ($spriteIndex = 0; $spriteIndex -lt $spriteValues.Count; $spriteIndex++) {
+                $sprite = $spriteValues[$spriteIndex]
+                $key = [DoomInfo]::SpriteNames.names.Replaced[$sprite]
                 if ($null -ne $key) {
                     $temp[$key] = New-Object 'System.Collections.Generic.List[SpriteInfo]'
                 }
@@ -16,47 +18,29 @@ class SpriteLookup : ISpriteLookup {
             
             $cache = New-Object 'System.Collections.Generic.Dictionary[int, Patch]'
 
-            foreach ($lump in [SpriteLookup]::EnumerateSprites($wad)) {
-                $name = $wad.LumpInfos[$lump].Name.Substring(0, 4)
+            $spriteLumpsEnumerable = [SpriteLookup]::EnumerateSprites($wad)
+            if ($null -ne $spriteLumpsEnumerable) {
+                $spriteLumpsEnumerator = $spriteLumpsEnumerable.GetEnumerator()
+                for (; $spriteLumpsEnumerator.MoveNext(); ) {
+                    $lump = $spriteLumpsEnumerator.Current
+                    $name = $wad.LumpInfos[$lump].Name.Substring(0, 4)
 
-                if (-not $temp.ContainsKey($name)) {
-                    continue
-                }
-
-                $list = $temp[$name]
-
-                $frame = [byte][char]$wad.LumpInfos[$lump].Name[4] - [byte][char]'A'
-                $rotation = [byte][char]$wad.LumpInfos[$lump].Name[5] - [byte][char]'0'
-                
-                # Ensure $list is a List[SpriteInfo]
-                if (-not ($list -is [System.Collections.Generic.List[SpriteInfo]])) {
-                    $list = [System.Collections.Generic.List[SpriteInfo]]::new()
-                    $temp[$name] = $list  # Store back in the hashtable
-                }
-                
-                # Ensure the list has enough elements
-                while ($list.Count -lt ($frame + 1)) {
-                    $list.Add([SpriteInfo]::new())
-                }
-
-                if ($rotation -eq 0) {
-                    for ($i = 0; $i -lt 8; $i++) {
-                        if ($null -eq $list[$frame].Patches[$i]) {
-                            $list[$frame].Patches[$i] = [SpriteLookup]::CachedRead($lump, $wad, $cache)
-                            $list[$frame].Flip[$i] = $false
-                        }
+                    if (-not $temp.ContainsKey($name)) {
+                        continue
                     }
-                } else {
-                    if ($null -eq $list[$frame].Patches[$rotation - 1]) {
-                        $list[$frame].Patches[$rotation - 1] = [SpriteLookup]::CachedRead($lump, $wad, $cache)
-                        $list[$frame].Flip[$rotation - 1] = $false
+
+                    $list = $temp[$name]
+
+                    $frame = [byte][char]$wad.LumpInfos[$lump].Name[4] - [byte][char]'A'
+                    $rotation = [byte][char]$wad.LumpInfos[$lump].Name[5] - [byte][char]'0'
+
+                    # Ensure $list is a List[SpriteInfo]
+                    if (-not ($list -is [System.Collections.Generic.List[SpriteInfo]])) {
+                        $list = [System.Collections.Generic.List[SpriteInfo]]::new()
+                        $temp[$name] = $list  # Store back in the hashtable
                     }
-                }
 
-                if ($wad.LumpInfos[$lump].Name.Length -eq 8) {
-                    $frame = [byte][char]$wad.LumpInfos[$lump].Name[6] - [byte][char]'A'
-                    $rotation = [byte][char]$wad.LumpInfos[$lump].Name[7] - [byte][char]'0'
-
+                    # Ensure the list has enough elements
                     while ($list.Count -lt ($frame + 1)) {
                         $list.Add([SpriteInfo]::new())
                     }
@@ -65,15 +49,39 @@ class SpriteLookup : ISpriteLookup {
                         for ($i = 0; $i -lt 8; $i++) {
                             if ($null -eq $list[$frame].Patches[$i]) {
                                 $list[$frame].Patches[$i] = [SpriteLookup]::CachedRead($lump, $wad, $cache)
-                                $list[$frame].Flip[$i] = $true
+                                $list[$frame].Flip[$i] = $false
                             }
                         }
                     } else {
                         if ($null -eq $list[$frame].Patches[$rotation - 1]) {
                             $list[$frame].Patches[$rotation - 1] = [SpriteLookup]::CachedRead($lump, $wad, $cache)
-                            $list[$frame].Flip[$rotation - 1] = $true
+                            $list[$frame].Flip[$rotation - 1] = $false
                         }
                     }
+
+                    if ($wad.LumpInfos[$lump].Name.Length -eq 8) {
+                        $frame = [byte][char]$wad.LumpInfos[$lump].Name[6] - [byte][char]'A'
+                        $rotation = [byte][char]$wad.LumpInfos[$lump].Name[7] - [byte][char]'0'
+
+                        while ($list.Count -lt ($frame + 1)) {
+                            $list.Add([SpriteInfo]::new())
+                        }
+
+                        if ($rotation -eq 0) {
+                            for ($i = 0; $i -lt 8; $i++) {
+                                if ($null -eq $list[$frame].Patches[$i]) {
+                                    $list[$frame].Patches[$i] = [SpriteLookup]::CachedRead($lump, $wad, $cache)
+                                    $list[$frame].Flip[$i] = $true
+                                }
+                            }
+                        } else {
+                            if ($null -eq $list[$frame].Patches[$rotation - 1]) {
+                                $list[$frame].Patches[$rotation - 1] = [SpriteLookup]::CachedRead($lump, $wad, $cache)
+                                $list[$frame].Flip[$rotation - 1] = $true
+                            }
+                        }
+                    }
+
                 }
             }
 
@@ -104,7 +112,6 @@ class SpriteLookup : ISpriteLookup {
             
                 # Ensure frames array is not empty
                 if ($frames.Length -eq 0) {
-                    #Write-Warning "Skipping sprite creation due to empty frames: $_"
                     continue
                 }
                 $this.spriteDefs[$i] = [SpriteDef]::new([SpriteFrame[]]$frames)

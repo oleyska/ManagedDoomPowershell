@@ -1,3 +1,4 @@
+[Flags()]
 enum MobjFlags
 {   
     None = 0

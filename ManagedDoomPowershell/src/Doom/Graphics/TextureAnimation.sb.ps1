@@ -8,40 +8,46 @@ class TextureAnimation {
             #$list = @()
             $list = [System.Collections.Generic.List[TextureAnimationInfo]]::new()
 
-            foreach ($animDef in [DoomInfo]::TextureAnimation) {
-                $picNum = 0
-                $basePic = 0
+            $textureAnimationDefinitionsEnumerable = [DoomInfo]::TextureAnimation
+            if ($null -ne $textureAnimationDefinitionsEnumerable) {
+                $textureAnimationDefinitionsEnumerator = $textureAnimationDefinitionsEnumerable.GetEnumerator()
+                for (; $textureAnimationDefinitionsEnumerator.MoveNext(); ) {
+                    $animDef = $textureAnimationDefinitionsEnumerator.Current
+                    $picNum = 0
+                    $basePic = 0
 
-                if ($animDef.IsTexture) {
-                    if ($textures.GetNumber($animDef.StartName) -eq -1) {
-                        continue
+                    if ($animDef.IsTexture) {
+                        if ($textures.GetNumber($animDef.StartName) -eq -1) {
+                            continue
+                        }
+
+                        $picNum = $textures.GetNumber($animDef.EndName)
+                        $basePic = $textures.GetNumber($animDef.StartName)
+                    } else {
+                        if ($flats.GetNumber($animDef.StartName) -eq -1) {
+                            continue
+                        }
+
+                        $picNum = $flats.GetNumber($animDef.EndName)
+                        $basePic = $flats.GetNumber($animDef.StartName)
                     }
 
-                    $picNum = $textures.GetNumber($animDef.EndName)
-                    $basePic = $textures.GetNumber($animDef.StartName)
-                } else {
-                    if ($flats.GetNumber($animDef.StartName) -eq -1) {
-                        continue
+                    $anim = [TextureAnimationInfo]::new(
+                        $animDef.IsTexture,
+                        $picNum,
+                        $basePic,
+                        $picNum - $basePic + 1,
+                        $animDef.Speed
+                    )
+
+                    if ($anim.NumPics -lt 2) {
+                        throw "Bad animation cycle from $($animDef.StartName) to $($animDef.EndName)!"
                     }
 
-                    $picNum = $flats.GetNumber($animDef.EndName)
-                    $basePic = $flats.GetNumber($animDef.StartName)
+                    #$list += $anim
+                    $list.Add($anim)
+
                 }
-
-                $anim = [TextureAnimationInfo]::new(
-                    $animDef.IsTexture,
-                    $picNum,
-                    $basePic,
-                    $picNum - $basePic + 1,
-                    $animDef.Speed
-                )
-
-                if ($anim.NumPics -lt 2) {
-                    throw "Bad animation cycle from $($animDef.StartName) to $($animDef.EndName)!"
-                }
-
-                #$list += $anim
-                $list.Add($anim)
             }
 
             $this.Animations = $list

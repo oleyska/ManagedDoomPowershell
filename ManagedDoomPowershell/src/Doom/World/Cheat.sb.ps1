@@ -51,31 +51,37 @@ class Cheat {
     }
 
     [void] CheckBuffer() {
-        foreach ($cheatInfo in [Cheat]::List) {
-            $code = $cheatInfo.Code.ToCharArray()
-            $q = $this.P
-            $match = $true
-            for ($j = 0; $j -lt $code.Length; $j++) {
-                $q--
-                if ($q -lt 0) { $q = $this.Buffer.Length - 1 }
-                if ($this.Buffer[$q] -ne $code[$code.Length - $j - 1] -and $code[$code.Length - $j - 1] -ne '?') {
-                    $match = $false
-                    break
-                }
-            }
-            if ($match) {
-                $typed = New-Object char[] $code.Length
-                $k = $code.Length
+        $cheatInfosEnumerable = [Cheat]::List
+        if ($null -ne $cheatInfosEnumerable) {
+            $cheatInfosEnumerator = $cheatInfosEnumerable.GetEnumerator()
+            for (; $cheatInfosEnumerator.MoveNext(); ) {
+                $cheatInfo = $cheatInfosEnumerator.Current
+                $code = $cheatInfo.Code.ToCharArray()
                 $q = $this.P
+                $match = $true
                 for ($j = 0; $j -lt $code.Length; $j++) {
-                    $k--
                     $q--
                     if ($q -lt 0) { $q = $this.Buffer.Length - 1 }
-                    $typed[$k] = $this.Buffer[$q]
+                    if ($this.Buffer[$q] -ne $code[$code.Length - $j - 1] -and $code[$code.Length - $j - 1] -ne '?') {
+                        $match = $false
+                        break
+                    }
                 }
-                if ($this.World.Options.Skill -ne [GameSkill]::Nightmare -or $cheatInfo.AvailableOnNightmare) {
-                    & $cheatInfo.Action.Invoke($this, -join $typed)
+                if ($match) {
+                    $typed = New-Object char[] $code.Length
+                    $k = $code.Length
+                    $q = $this.P
+                    for ($j = 0; $j -lt $code.Length; $j++) {
+                        $k--
+                        $q--
+                        if ($q -lt 0) { $q = $this.Buffer.Length - 1 }
+                        $typed[$k] = $this.Buffer[$q]
+                    }
+                    if ($this.World.Options.Skill -ne [GameSkill]::Nightmare -or $cheatInfo.AvailableOnNightmare) {
+                        & $cheatInfo.Action.Invoke($this, -join $typed)
+                    }
                 }
+
             }
         }
     }
@@ -136,10 +142,16 @@ class Cheat {
     [void] KillMonsters() {
         $player = $this.World.ConsolePlayer
         $count = 0
-        foreach ($thinker in $this.World.Thinkers) {
-            if ($thinker -is [Mobj] -and $null -eq $thinker.Player -and ($thinker.Flags -band [MobjFlags]::CountKill -or $thinker.Type -eq [MobjType]::Skull) -and $thinker.Health -gt 0) {
-                $this.World.ThingInteraction.DamageMobj($thinker, $null, $player.Mobj, 10000)
-                $count++
+        $monsterThinkersEnumerable = $this.World.Thinkers
+        if ($null -ne $monsterThinkersEnumerable) {
+            $monsterThinkersEnumerator = $monsterThinkersEnumerable.GetEnumerator()
+            for (; $monsterThinkersEnumerator.MoveNext(); ) {
+                $thinker = $monsterThinkersEnumerator.Current
+                if ($thinker -is [Mobj] -and $null -eq $thinker.Player -and ($thinker.Flags -band [MobjFlags]::CountKill -or $thinker.Type -eq [MobjType]::Skull) -and $thinker.Health -gt 0) {
+                    $this.World.ThingInteraction.DamageMobj($thinker, $null, $player.Mobj, 10000)
+                    $count++
+                }
+
             }
         }
         $player.SendMessage("$count monsters killed")
