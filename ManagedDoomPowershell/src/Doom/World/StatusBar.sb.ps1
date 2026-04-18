@@ -1,3 +1,21 @@
+##
+## Copyright (C) 1993-1996 Id Software, Inc.
+## Copyright (C) 2019-2020 Nobuaki Tanaka
+## Copyright (C) 2026 Oleyska
+##
+## This file is a PowerShell port / modified version of code from ManagedDoom.
+##
+## This program is free software; you can redistribute it and/or modify
+## it under the terms of the GNU General Public License as published by
+## the Free Software Foundation; either version 2 of the License, or
+## (at your option) any later version.
+##
+## This program is distributed in the hope that it will be useful,
+## but WITHOUT ANY WARRANTY; without even the implied warranty of
+## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+## GNU General Public License for more details.
+##
+
 class StatusBar {
     [World] $World
     static [Face] $Face = [Face]::new()
@@ -50,8 +68,33 @@ class StatusBar {
         $this.UpdateFace()
     }
 
+    [bool] UpdateOwnedWeaponSnapshot([Player] $player) {
+        if ($null -eq $player -or $null -eq $player.WeaponOwned) {
+            return $false
+        }
+
+        if ($null -eq $this.OldWeaponsOwned -or $this.OldWeaponsOwned.Length -ne $player.WeaponOwned.Length) {
+            $this.OldWeaponsOwned = New-Object 'bool[]' ($player.WeaponOwned.Length)
+        }
+
+        $gainedWeapon = $false
+        for ($i = 0; $i -lt $player.WeaponOwned.Length; $i++) {
+            $wasOwned = [bool]$this.OldWeaponsOwned[$i]
+            $isOwned = [bool]$player.WeaponOwned[$i]
+            if ($wasOwned -ne $isOwned) {
+                if (-not $wasOwned -and $isOwned) {
+                    $gainedWeapon = $true
+                }
+                $this.OldWeaponsOwned[$i] = $isOwned
+            }
+        }
+
+        return $gainedWeapon
+    }
+
     [void] UpdateFace() {
         $player = $this.World.ConsolePlayer
+        $gainedWeapon = $this.UpdateOwnedWeaponSnapshot($player)
 
         if ($this.Priority -lt 10) {
             if ($player.Health -eq 0) {
@@ -63,24 +106,7 @@ class StatusBar {
 
         if ($this.Priority -lt 9) {
             if ($player.BonusCount -ne 0) {
-                $doEvilGrin = $false
-
-                if ($null -eq $this.OldWeaponsOwned) {
-                    $this.OldWeaponsOwned = New-Object 'bool[]' ([DoomInfo]::WeaponInfos.Length)
-                }
-
-                if ($null -eq$player.WeaponOwned) {
-                    return
-                }
-
-                for ($i = 0; $i -lt [DoomInfo]::WeaponInfos.Length; $i++) {
-                    if ($this.OldWeaponsOwned[$i] -ne $player.WeaponOwned[$i]) {
-                        $doEvilGrin = $true
-                        $this.OldWeaponsOwned[$i] = $player.WeaponOwned[$i]
-                    }
-                }
-
-                if ($doEvilGrin) {
+                if ($gainedWeapon) {
                     $this.Priority = 8
                     $this.FaceCount = [StatusBar]::Face::EvilGrinDuration
                     $this.FaceIndex = $this.CalcPainOffset() + [StatusBar]::Face::EvilGrinOffset

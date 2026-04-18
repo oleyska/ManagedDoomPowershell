@@ -1,3 +1,21 @@
+##
+## Copyright (C) 1993-1996 Id Software, Inc.
+## Copyright (C) 2019-2020 Nobuaki Tanaka
+## Copyright (C) 2026 Oleyska
+##
+## This file is a PowerShell port / modified version of code from ManagedDoom.
+##
+## This program is free software; you can redistribute it and/or modify
+## it under the terms of the GNU General Public License as published by
+## the Free Software Foundation; either version 2 of the License, or
+## (at your option) any later version.
+##
+## This program is distributed in the hope that it will be useful,
+## but WITHOUT ANY WARRANTY; without even the implied warranty of
+## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+## GNU General Public License for more details.
+##
+
 # ThreeDRenderer.ps1 - Ported from C# ThreeDRenderer.cs
 
 class ThreeDRenderer {
@@ -64,6 +82,7 @@ class ThreeDRenderer {
         $this.emptyFlatData = [byte[]]::new(4096)
         $this.skyFlatNumber = $content.Flats.SkyFlatNumber
         $this.sprites = $content.Sprites -as [ISpriteLookup]
+        $this.perfThreeDEnabled = ($env:DOOM_POWERSHELL_RENDER_PERF -eq '1' -or $env:DOOM_POWERSHELL_RENDER_PERF -eq 'true' -or $env:DOOM_POWERSHELL_BENCHMARKS -eq '1' -or $env:DOOM_POWERSHELL_BENCHMARKS -eq 'true')
 
         $this.screen = $screen
         $this.screenWidth = $screen.Width
@@ -678,6 +697,7 @@ class ThreeDRenderer {
     [int] $debugSegCount
     [int] $debugSolidWallCount
     [int] $debugPassWallCount
+    [bool] $perfThreeDEnabled
     [bool] $perfThreeDSampleFrame
     [long] $PerfThreeDFrames
     [long] $PerfThreeDSampleFrames
@@ -700,8 +720,14 @@ class ThreeDRenderer {
     [long] $PerfThreeDVisSprites
 
     [void] Render([Player] $player, [Fixed] $frameFrac) {
-        $perfThreeDStart = [System.Diagnostics.Stopwatch]::GetTimestamp()
-        $this.perfThreeDSampleFrame = (($this.PerfThreeDFrames % 30) -eq 0)
+        $perfEnabled = $this.perfThreeDEnabled
+        [long] $perfThreeDStart = 0
+        if ($perfEnabled) {
+            $perfThreeDStart = [System.Diagnostics.Stopwatch]::GetTimestamp()
+            $this.perfThreeDSampleFrame = (($this.PerfThreeDFrames % 30) -eq 0)
+        } else {
+            $this.perfThreeDSampleFrame = $false
+        }
         $this.frameFrac = $frameFrac
 
         $this.world = $player.Mobj.World
@@ -743,75 +769,102 @@ class ThreeDRenderer {
         $this.ClearLighting()
         $this.ClearRenderingHistory()
         $this.ClearSpriteRendering()
-        $this.debugSubsectorCount = 0
-        $this.debugSegCount = 0
-        $this.debugSolidWallCount = 0
-        $this.debugPassWallCount = 0
-        $phaseStart = [System.Diagnostics.Stopwatch]::GetTimestamp()
-        $this.PerfThreeDTicksSetup += ($phaseStart - $perfThreeDStart)
+        [long] $phaseStart = 0
+        if ($perfEnabled) {
+            $this.debugSubsectorCount = 0
+            $this.debugSegCount = 0
+            $this.debugSolidWallCount = 0
+            $this.debugPassWallCount = 0
+            $phaseStart = [System.Diagnostics.Stopwatch]::GetTimestamp()
+            $this.PerfThreeDTicksSetup += ($phaseStart - $perfThreeDStart)
+        }
 
-        $bspStart = $phaseStart
+        [long] $bspStart = $phaseStart
         $this.RenderBspNode($this.world.Map.Nodes.Length - 1)
-        $this.PerfThreeDTicksBsp += ([System.Diagnostics.Stopwatch]::GetTimestamp() - $bspStart)
+        if ($perfEnabled) {
+            $this.PerfThreeDTicksBsp += ([System.Diagnostics.Stopwatch]::GetTimestamp() - $bspStart)
+        }
 
-        $spritesStart = [System.Diagnostics.Stopwatch]::GetTimestamp()
+        [long] $spritesStart = 0
+        if ($perfEnabled) {
+            $spritesStart = [System.Diagnostics.Stopwatch]::GetTimestamp()
+        }
         $this.RenderSprites()
-        $this.PerfThreeDTicksSprites += ([System.Diagnostics.Stopwatch]::GetTimestamp() - $spritesStart)
+        if ($perfEnabled) {
+            $this.PerfThreeDTicksSprites += ([System.Diagnostics.Stopwatch]::GetTimestamp() - $spritesStart)
+        }
 
-        $maskedStart = [System.Diagnostics.Stopwatch]::GetTimestamp()
+        [long] $maskedStart = 0
+        if ($perfEnabled) {
+            $maskedStart = [System.Diagnostics.Stopwatch]::GetTimestamp()
+        }
         $this.RenderMaskedTextures()
-        $this.PerfThreeDTicksMasked += ([System.Diagnostics.Stopwatch]::GetTimestamp() - $maskedStart)
+        if ($perfEnabled) {
+            $this.PerfThreeDTicksMasked += ([System.Diagnostics.Stopwatch]::GetTimestamp() - $maskedStart)
+        }
 
-        $playerSpritesStart = [System.Diagnostics.Stopwatch]::GetTimestamp()
+        [long] $playerSpritesStart = 0
+        if ($perfEnabled) {
+            $playerSpritesStart = [System.Diagnostics.Stopwatch]::GetTimestamp()
+        }
         $this.DrawPlayerSprites($player)
-        $this.PerfThreeDTicksPlayerSprites += ([System.Diagnostics.Stopwatch]::GetTimestamp() - $playerSpritesStart)
+        if ($perfEnabled) {
+            $this.PerfThreeDTicksPlayerSprites += ([System.Diagnostics.Stopwatch]::GetTimestamp() - $playerSpritesStart)
+        }
 
         if ($this.windowSize -lt 7) {
-            $backScreenStart = [System.Diagnostics.Stopwatch]::GetTimestamp()
-            $this.FillBackScreen()
-            $this.PerfThreeDTicksBackScreen += ([System.Diagnostics.Stopwatch]::GetTimestamp() - $backScreenStart)
-        }
-
-        $this.PerfThreeDTicksTotal += ([System.Diagnostics.Stopwatch]::GetTimestamp() - $perfThreeDStart)
-        $this.PerfThreeDFrames++
-        if ($this.perfThreeDSampleFrame) {
-            $this.PerfThreeDSampleFrames++
-        }
-        $this.PerfThreeDSubsectors += $this.debugSubsectorCount
-        $this.PerfThreeDSegs += $this.debugSegCount
-        $this.PerfThreeDSolidWalls += $this.debugSolidWallCount
-        $this.PerfThreeDPassWalls += $this.debugPassWallCount
-        $this.PerfThreeDVisWalls += $this.visWallRangeCount
-        $this.PerfThreeDVisSprites += $this.visSpriteCount
-
-        if (($this.PerfThreeDFrames % 30) -eq 0) {
-            $sampleFrames = [double]$this.PerfThreeDSampleFrames
-            if ($sampleFrames -lt 1.0) {
-                $sampleFrames = 1.0
+            [long] $backScreenStart = 0
+            if ($perfEnabled) {
+                $backScreenStart = [System.Diagnostics.Stopwatch]::GetTimestamp()
             }
-            [Console]::WriteLine(
-                ("ThreeDPerf frames={0} avgTicks total={1:N0} setup={2:N0} bsp={3:N0} sprites={4:N0} masked={5:N0} player={6:N0} back={7:N0} avgSubsectors={8:N1} avgSegs={9:N1} avgSolid={10:N1} avgPass={11:N1} avgWalls={12:N1} avgSprites={13:N1}" -f
-                    $this.PerfThreeDFrames,
-                    ($this.PerfThreeDTicksTotal / $this.PerfThreeDFrames),
-                    ($this.PerfThreeDTicksSetup / $this.PerfThreeDFrames),
-                    ($this.PerfThreeDTicksBsp / $this.PerfThreeDFrames),
-                    ($this.PerfThreeDTicksSprites / $this.PerfThreeDFrames),
-                    ($this.PerfThreeDTicksMasked / $this.PerfThreeDFrames),
-                    ($this.PerfThreeDTicksPlayerSprites / $this.PerfThreeDFrames),
-                    ($this.PerfThreeDTicksBackScreen / $this.PerfThreeDFrames),
-                    ($this.PerfThreeDSubsectors / [double]$this.PerfThreeDFrames),
-                    ($this.PerfThreeDSegs / [double]$this.PerfThreeDFrames),
-                    ($this.PerfThreeDSolidWalls / [double]$this.PerfThreeDFrames),
-                    ($this.PerfThreeDPassWalls / [double]$this.PerfThreeDFrames),
-                    ($this.PerfThreeDVisWalls / [double]$this.PerfThreeDFrames),
-                    ($this.PerfThreeDVisSprites / [double]$this.PerfThreeDFrames)))
-            [Console]::WriteLine(
-                ("ThreeDPerfBsp frames={0} avgTicks drawSeg={1:N0} solidRange={2:N0} passRange={3:N0} addSprites={4:N0}" -f
-                    $this.PerfThreeDFrames,
-                    ($this.PerfThreeDTicksDrawSeg / $sampleFrames),
-                    ($this.PerfThreeDTicksSolidRange / $sampleFrames),
-                    ($this.PerfThreeDTicksPassRange / $sampleFrames),
-                    ($this.PerfThreeDTicksAddSprites / $sampleFrames)))
+            $this.FillBackScreen()
+            if ($perfEnabled) {
+                $this.PerfThreeDTicksBackScreen += ([System.Diagnostics.Stopwatch]::GetTimestamp() - $backScreenStart)
+            }
+        }
+
+        if ($perfEnabled) {
+            $this.PerfThreeDTicksTotal += ([System.Diagnostics.Stopwatch]::GetTimestamp() - $perfThreeDStart)
+            $this.PerfThreeDFrames++
+            if ($this.perfThreeDSampleFrame) {
+                $this.PerfThreeDSampleFrames++
+            }
+            $this.PerfThreeDSubsectors += $this.debugSubsectorCount
+            $this.PerfThreeDSegs += $this.debugSegCount
+            $this.PerfThreeDSolidWalls += $this.debugSolidWallCount
+            $this.PerfThreeDPassWalls += $this.debugPassWallCount
+            $this.PerfThreeDVisWalls += $this.visWallRangeCount
+            $this.PerfThreeDVisSprites += $this.visSpriteCount
+
+            if (($this.PerfThreeDFrames % 30) -eq 0) {
+                $sampleFrames = [double]$this.PerfThreeDSampleFrames
+                if ($sampleFrames -lt 1.0) {
+                    $sampleFrames = 1.0
+                }
+                [Console]::WriteLine(
+                    ("ThreeDPerf frames={0} avgTicks total={1:N0} setup={2:N0} bsp={3:N0} sprites={4:N0} masked={5:N0} player={6:N0} back={7:N0} avgSubsectors={8:N1} avgSegs={9:N1} avgSolid={10:N1} avgPass={11:N1} avgWalls={12:N1} avgSprites={13:N1}" -f
+                        $this.PerfThreeDFrames,
+                        ($this.PerfThreeDTicksTotal / $this.PerfThreeDFrames),
+                        ($this.PerfThreeDTicksSetup / $this.PerfThreeDFrames),
+                        ($this.PerfThreeDTicksBsp / $this.PerfThreeDFrames),
+                        ($this.PerfThreeDTicksSprites / $this.PerfThreeDFrames),
+                        ($this.PerfThreeDTicksMasked / $this.PerfThreeDFrames),
+                        ($this.PerfThreeDTicksPlayerSprites / $this.PerfThreeDFrames),
+                        ($this.PerfThreeDTicksBackScreen / $this.PerfThreeDFrames),
+                        ($this.PerfThreeDSubsectors / [double]$this.PerfThreeDFrames),
+                        ($this.PerfThreeDSegs / [double]$this.PerfThreeDFrames),
+                        ($this.PerfThreeDSolidWalls / [double]$this.PerfThreeDFrames),
+                        ($this.PerfThreeDPassWalls / [double]$this.PerfThreeDFrames),
+                        ($this.PerfThreeDVisWalls / [double]$this.PerfThreeDFrames),
+                        ($this.PerfThreeDVisSprites / [double]$this.PerfThreeDFrames)))
+                [Console]::WriteLine(
+                    ("ThreeDPerfBsp frames={0} avgTicks drawSeg={1:N0} solidRange={2:N0} passRange={3:N0} addSprites={4:N0}" -f
+                        $this.PerfThreeDFrames,
+                        ($this.PerfThreeDTicksDrawSeg / $sampleFrames),
+                        ($this.PerfThreeDTicksSolidRange / $sampleFrames),
+                        ($this.PerfThreeDTicksPassRange / $sampleFrames),
+                        ($this.PerfThreeDTicksAddSprites / $sampleFrames)))
+            }
         }
     }
 
@@ -881,8 +934,10 @@ class ThreeDRenderer {
 
     [void] DrawSubsector([int] $subsector) {
         $target = $this.world.Map.Subsectors[$subsector]
-        $this.debugSubsectorCount++
-        $this.debugSegCount += $target.SegCount
+        if ($this.perfThreeDEnabled) {
+            $this.debugSubsectorCount++
+            $this.debugSegCount += $target.SegCount
+        }
         $samplePerfFrame = $this.perfThreeDSampleFrame
 
         if ($samplePerfFrame) {
@@ -1356,7 +1411,9 @@ class ThreeDRenderer {
         # Record rendering history.
         $visWallRange = $this.visWallRanges[$this.visWallRangeCount]
         $this.visWallRangeCount++
-        $this.debugSolidWallCount++
+        if ($this.perfThreeDEnabled) {
+            $this.debugSolidWallCount++
+        }
 
         $visWallRange.Seg = $seg
         $visWallRange.X1 = $x1
@@ -1724,7 +1781,9 @@ class ThreeDRenderer {
 
         $visWallRange = $this.visWallRanges[$this.visWallRangeCount]
         $this.visWallRangeCount++
-        $this.debugPassWallCount++
+        if ($this.perfThreeDEnabled) {
+            $this.debugPassWallCount++
+        }
 
         $visWallRange.Seg = $seg
         $visWallRange.X1 = $x1

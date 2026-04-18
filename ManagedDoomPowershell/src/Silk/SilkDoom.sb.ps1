@@ -1,3 +1,21 @@
+##
+## Copyright (C) 1993-1996 Id Software, Inc.
+## Copyright (C) 2019-2020 Nobuaki Tanaka
+## Copyright (C) 2026 Oleyska
+##
+## This file is a PowerShell port / modified version of code from ManagedDoom.
+##
+## This program is free software; you can redistribute it and/or modify
+## it under the terms of the GNU General Public License as published by
+## the Free Software Foundation; either version 2 of the License, or
+## (at your option) any later version.
+##
+## This program is distributed in the hope that it will be useful,
+## but WITHOUT ANY WARRANTY; without even the implied warranty of
+## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+## GNU General Public License for more details.
+##
+
 class SilkDoom : IDisposable {
     hidden static [bool]$PlatformsRegistered = $false
 
@@ -16,6 +34,7 @@ class SilkDoom : IDisposable {
     [int] $frameCount
     [Exception] $lastException
     [int] $debugLoopCount
+    [bool] $benchmarksEnabled
     [int] $benchmarkInterval
     [int] $benchmarkLoopCount
     [long] $benchmarkLoopTicks
@@ -48,6 +67,7 @@ class SilkDoom : IDisposable {
             $this.config = [SilkConfigUtilities]::GetConfig()
             $this.content = [GameContent]::new($this.inargs)
             $this.benchmarkInterval = 120
+            $this.benchmarksEnabled = ($env:DOOM_POWERSHELL_BENCHMARKS -eq '1' -or $env:DOOM_POWERSHELL_BENCHMARKS -eq 'true')
 
             $this.config.video_screenwidth = [math]::Clamp($this.config.video_screenwidth, 320, 3200)
             $this.config.video_screenheight = [math]::Clamp($this.config.video_screenheight, 200, 2000)
@@ -88,6 +108,10 @@ class SilkDoom : IDisposable {
     }
 
     hidden [void] LogBenchmarksIfNeeded() {
+        if (-not $this.benchmarksEnabled) {
+            return
+        }
+
         if ($this.benchmarkLoopCount -lt $this.benchmarkInterval) {
             return
         }
@@ -150,16 +174,27 @@ class SilkDoom : IDisposable {
 
     hidden [void] OnUpdate([double] $obj) {
         try {
-            $pollStart = [System.Diagnostics.Stopwatch]::GetTimestamp()
-            $this.frameCount++
-            $this.userInput.PollEvents()
-            $this.benchmarkPollTicks += [System.Diagnostics.Stopwatch]::GetTimestamp() - $pollStart
-            if ($this.frameCount % $this.fpsScale -eq 0) {
-                $updateStart = [System.Diagnostics.Stopwatch]::GetTimestamp()
-                $updateResult = $this.doom.Update()
-                $this.benchmarkDoomUpdateTicks += [System.Diagnostics.Stopwatch]::GetTimestamp() - $updateStart
-                if ($updateResult -eq [UpdateResult]::Completed) {
-                    $this.window.Close()
+            if (-not $this.benchmarksEnabled) {
+                $this.frameCount++
+                $this.userInput.PollEvents()
+                if ($this.frameCount % $this.fpsScale -eq 0) {
+                    $updateResult = $this.doom.Update()
+                    if ($updateResult -eq [UpdateResult]::Completed) {
+                        $this.window.Close()
+                    }
+                }
+            } else {
+                $pollStart = [System.Diagnostics.Stopwatch]::GetTimestamp()
+                $this.frameCount++
+                $this.userInput.PollEvents()
+                $this.benchmarkPollTicks += [System.Diagnostics.Stopwatch]::GetTimestamp() - $pollStart
+                if ($this.frameCount % $this.fpsScale -eq 0) {
+                    $updateStart = [System.Diagnostics.Stopwatch]::GetTimestamp()
+                    $updateResult = $this.doom.Update()
+                    $this.benchmarkDoomUpdateTicks += [System.Diagnostics.Stopwatch]::GetTimestamp() - $updateStart
+                    if ($updateResult -eq [UpdateResult]::Completed) {
+                        $this.window.Close()
+                    }
                 }
             }
         } catch {
@@ -183,12 +218,17 @@ class SilkDoom : IDisposable {
     hidden [void] OnRender([double] $obj) {
         try {
             $frameFrac = [Fixed]::FromInt(($this.frameCount % $this.fpsScale) + 1) / $this.fpsScale
-            $renderStart = [System.Diagnostics.Stopwatch]::GetTimestamp()
-            $this.video.Render($this.doom, $frameFrac)
-            $this.benchmarkVideoRenderTicks += [System.Diagnostics.Stopwatch]::GetTimestamp() - $renderStart
-            $swapStart = [System.Diagnostics.Stopwatch]::GetTimestamp()
-            $this.window.GLContext.SwapBuffers()
-            $this.benchmarkSwapTicks += [System.Diagnostics.Stopwatch]::GetTimestamp() - $swapStart
+            if (-not $this.benchmarksEnabled) {
+                $this.video.Render($this.doom, $frameFrac)
+                $this.window.GLContext.SwapBuffers()
+            } else {
+                $renderStart = [System.Diagnostics.Stopwatch]::GetTimestamp()
+                $this.video.Render($this.doom, $frameFrac)
+                $this.benchmarkVideoRenderTicks += [System.Diagnostics.Stopwatch]::GetTimestamp() - $renderStart
+                $swapStart = [System.Diagnostics.Stopwatch]::GetTimestamp()
+                $this.window.GLContext.SwapBuffers()
+                $this.benchmarkSwapTicks += [System.Diagnostics.Stopwatch]::GetTimestamp() - $swapStart
+            }
         } catch {
             [Console]::WriteLine("OnRender exception: " + $_.Exception.ToString())
             if ($null -ne $_.InvocationInfo) {
@@ -307,9 +347,34 @@ class SilkDoom : IDisposable {
 
         $sw = [System.Diagnostics.Stopwatch]::new()
         $sw.Start()
-        $this.ResetBenchmarks()
+        if ($this.benchmarksEnabled) {
+            $this.ResetBenchmarks()
+        }
 
         while (-not $this.window.IsClosing) {
+            if (-not $this.benchmarksEnabled) {
+                $this.window.DoEvents()
+
+                if (-not $this.window.IsClosing) {
+                    $this.OnResize([Silk.NET.Maths.Vector2D[int]]::new(0, 0))
+                    $this.OnUpdate(0)
+                    $gameTime += $gameTimeStep
+                }
+
+                if (-not $this.window.IsClosing) {
+                    $this.OnRender(0)
+                    $sleepTime = $gameTime - $sw.Elapsed
+                    $ms = [int]$sleepTime.TotalMilliseconds
+                    if ($ms -gt 0) {
+                        [System.Threading.Thread]::Sleep($ms)
+                    }
+                } else {
+                    break
+                }
+
+                continue
+            }
+
             $loopStart = [System.Diagnostics.Stopwatch]::GetTimestamp()
             $doEventsStart = [System.Diagnostics.Stopwatch]::GetTimestamp()
             $this.window.DoEvents()

@@ -1,3 +1,21 @@
+##
+## Copyright (C) 1993-1996 Id Software, Inc.
+## Copyright (C) 2019-2020 Nobuaki Tanaka
+## Copyright (C) 2026 Oleyska
+##
+## This file is a PowerShell port / modified version of code from ManagedDoom.
+##
+## This program is free software; you can redistribute it and/or modify
+## it under the terms of the GNU General Public License as published by
+## the Free Software Foundation; either version 2 of the License, or
+## (at your option) any later version.
+##
+## This program is distributed in the hope that it will be useful,
+## but WITHOUT ANY WARRANTY; without even the implied warranty of
+## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+## GNU General Public License for more details.
+##
+
 class MapInteraction {
     static [Fixed] $UseRange = [Fixed]::FromInt(64)
     
@@ -107,9 +125,38 @@ class MapInteraction {
             111 { if ($sa.DoDoor($line, [VerticalDoorType]::BlazeRaise)) { $specials.ChangeSwitchTexture($line, $false) } }
             112 { if ($sa.DoDoor($line, [VerticalDoorType]::BlazeOpen)) { $specials.ChangeSwitchTexture($line, $false) } }
             113 { if ($sa.DoDoor($line, [VerticalDoorType]::BlazeClose)) { $specials.ChangeSwitchTexture($line, $false) } }
+            122 { if ($sa.DoPlatform($line, [PlatformType]::BlazeDwus, 0)) { $specials.ChangeSwitchTexture($line, $false) } }
             127 { if ($sa.BuildStairs($line, [StairType]::Turbo16)) { $specials.ChangeSwitchTexture($line, $false) } }
             131 { if ($sa.DoFloor($line, [FloorMoveType]::RaiseFloorTurbo)) { $specials.ChangeSwitchTexture($line, $false) } }
+            133 { if ($sa.DoLockedDoor($line, [VerticalDoorType]::BlazeOpen, $thing)) { $specials.ChangeSwitchTexture($line, $false) } }
+            135 { if ($sa.DoLockedDoor($line, [VerticalDoorType]::BlazeOpen, $thing)) { $specials.ChangeSwitchTexture($line, $false) } }
+            137 { if ($sa.DoLockedDoor($line, [VerticalDoorType]::BlazeOpen, $thing)) { $specials.ChangeSwitchTexture($line, $false) } }
             140 { if ($sa.DoFloor($line, [FloorMoveType]::RaiseFloor512)) { $specials.ChangeSwitchTexture($line, $false) } }
+
+            42  { if ($sa.DoDoor($line, [VerticalDoorType]::Close)) { $specials.ChangeSwitchTexture($line, $true) } }
+            43  { if ($sa.DoCeiling($line, [CeilingMoveType]::LowerToFloor)) { $specials.ChangeSwitchTexture($line, $true) } }
+            45  { if ($sa.DoFloor($line, [FloorMoveType]::LowerFloor)) { $specials.ChangeSwitchTexture($line, $true) } }
+            60  { if ($sa.DoFloor($line, [FloorMoveType]::LowerFloorToLowest)) { $specials.ChangeSwitchTexture($line, $true) } }
+            61  { if ($sa.DoDoor($line, [VerticalDoorType]::Open)) { $specials.ChangeSwitchTexture($line, $true) } }
+            62  { if ($sa.DoPlatform($line, [PlatformType]::DownWaitUpStay, 1)) { $specials.ChangeSwitchTexture($line, $true) } }
+            63  { if ($sa.DoDoor($line, [VerticalDoorType]::Normal)) { $specials.ChangeSwitchTexture($line, $true) } }
+            64  { if ($sa.DoFloor($line, [FloorMoveType]::RaiseFloor)) { $specials.ChangeSwitchTexture($line, $true) } }
+            65  { if ($sa.DoFloor($line, [FloorMoveType]::RaiseFloorCrush)) { $specials.ChangeSwitchTexture($line, $true) } }
+            66  { if ($sa.DoPlatform($line, [PlatformType]::RaiseAndChange, 24)) { $specials.ChangeSwitchTexture($line, $true) } }
+            67  { if ($sa.DoPlatform($line, [PlatformType]::RaiseAndChange, 32)) { $specials.ChangeSwitchTexture($line, $true) } }
+            68  { if ($sa.DoPlatform($line, [PlatformType]::RaiseToNearestAndChange, 0)) { $specials.ChangeSwitchTexture($line, $true) } }
+            69  { if ($sa.DoFloor($line, [FloorMoveType]::RaiseFloorToNearest)) { $specials.ChangeSwitchTexture($line, $true) } }
+            70  { if ($sa.DoFloor($line, [FloorMoveType]::TurboLower)) { $specials.ChangeSwitchTexture($line, $true) } }
+            99  { if ($sa.DoLockedDoor($line, [VerticalDoorType]::BlazeOpen, $thing)) { $specials.ChangeSwitchTexture($line, $true) } }
+            114 { if ($sa.DoDoor($line, [VerticalDoorType]::BlazeRaise)) { $specials.ChangeSwitchTexture($line, $true) } }
+            115 { if ($sa.DoDoor($line, [VerticalDoorType]::BlazeOpen)) { $specials.ChangeSwitchTexture($line, $true) } }
+            116 { if ($sa.DoDoor($line, [VerticalDoorType]::BlazeClose)) { $specials.ChangeSwitchTexture($line, $true) } }
+            123 { if ($sa.DoPlatform($line, [PlatformType]::BlazeDwus, 0)) { $specials.ChangeSwitchTexture($line, $true) } }
+            132 { if ($sa.DoFloor($line, [FloorMoveType]::RaiseFloorTurbo)) { $specials.ChangeSwitchTexture($line, $true) } }
+            134 { if ($sa.DoLockedDoor($line, [VerticalDoorType]::BlazeOpen, $thing)) { $specials.ChangeSwitchTexture($line, $true) } }
+            136 { if ($sa.DoLockedDoor($line, [VerticalDoorType]::BlazeOpen, $thing)) { $specials.ChangeSwitchTexture($line, $true) } }
+            138 { $sa.LightTurnOn($line, 255); $specials.ChangeSwitchTexture($line, $true) }
+            139 { $sa.LightTurnOn($line, 35); $specials.ChangeSwitchTexture($line, $true) }
         }
 
         return $true

@@ -1,3 +1,21 @@
+##
+## Copyright (C) 1993-1996 Id Software, Inc.
+## Copyright (C) 2019-2020 Nobuaki Tanaka
+## Copyright (C) 2026 Oleyska
+##
+## This file is a PowerShell port / modified version of code from ManagedDoom.
+##
+## This program is free software; you can redistribute it and/or modify
+## it under the terms of the GNU General Public License as published by
+## the Free Software Foundation; either version 2 of the License, or
+## (at your option) any later version.
+##
+## This program is distributed in the hope that it will be useful,
+## but WITHOUT ANY WARRANTY; without even the implied warranty of
+## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+## GNU General Public License for more details.
+##
+
 class SaveAndLoad {
     static [int] $DescriptionSize = 24
     static [int] $VersionSize = 16
@@ -56,9 +74,10 @@ class SaveGame {
             $this.Data[$this.Ptr++] = if ($options.Players[$i].InGame) { 1 } else { 0 }
         }
 
-        $this.Data[$this.Ptr++] = [byte]($game.World.LevelTime -shr 16)
-        $this.Data[$this.Ptr++] = [byte]($game.World.LevelTime -shr 8)
-        $this.Data[$this.Ptr++] = [byte]$game.World.LevelTime
+        $levelTime = $game.World.LevelTime
+        $this.Data[$this.Ptr++] = [byte](($levelTime -shr 16) -band 0xff)
+        $this.Data[$this.Ptr++] = [byte](($levelTime -shr 8) -band 0xff)
+        $this.Data[$this.Ptr++] = [byte]($levelTime -band 0xff)
 
         $this.ArchivePlayers($game.World)
         $this.ArchiveWorld($game.World)
@@ -487,9 +506,9 @@ class LoadGame {
 
         $game.InitNew($options.Skill, $options.Episode, $options.Map)
 
-        $a = $this.Data[$this.Ptr++]
-        $b = $this.Data[$this.Ptr++]
-        $c = $this.Data[$this.Ptr++]
+        $a = [int]$this.Data[$this.Ptr++]
+        $b = [int]$this.Data[$this.Ptr++]
+        $c = [int]$this.Data[$this.Ptr++]
         $levelTime = ($a -shl 16) + ($b -shl 8) + $c
 
         $this.UnArchivePlayers($game.World)
@@ -502,6 +521,7 @@ class LoadGame {
         }
 
         $game.World.LevelTime = $levelTime
+        $game.World.StatusBar.Reset()
 
         $options.Sound.SetListener($game.World.ConsolePlayer.Mobj)
     }

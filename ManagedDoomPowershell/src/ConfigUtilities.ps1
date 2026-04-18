@@ -1,5 +1,22 @@
+##
+## Copyright (C) 1993-1996 Id Software, Inc.
+## Copyright (C) 2019-2020 Nobuaki Tanaka
+## Copyright (C) 2026 Oleyska
+##
+## This file is a PowerShell port / modified version of code from ManagedDoom.
+##
+## This program is free software; you can redistribute it and/or modify
+## it under the terms of the GNU General Public License as published by
+## the Free Software Foundation; either version 2 of the License, or
+## (at your option) any later version.
+##
+## This program is distributed in the hope that it will be useful,
+## but WITHOUT ANY WARRANTY; without even the implied warranty of
+## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+## GNU General Public License for more details.
+##
+
 class ConfigUtilities {
-    # Static array equivalent to 'private static readonly string[] iwadNames'
     static [string[]] $iwadNames = @(
         "DOOM2.WAD",
         "PLUTONIA.WAD",
@@ -10,7 +27,7 @@ class ConfigUtilities {
         "FREEDOOM1.WAD"
     )
 
-    # Equivalent to 'public static string GetExeDirectory()'
+
     static [string] GetExeDirectory() {
         $basePath = $PSScriptRoot ?? (Get-Location).Path
 
@@ -25,12 +42,10 @@ class ConfigUtilities {
         return $basePath
     }
 
-    # Equivalent to 'public static string GetConfigPath()'
     static [string] GetConfigPath() {
         return [System.IO.Path]::Combine([ConfigUtilities]::GetExeDirectory(), "managed-doom.cfg")
     }
 
-    # Equivalent to 'public static string GetDefaultIwadPath()'
     static [string] GetDefaultIwadPath() {
         $exeDirectory = [ConfigUtilities]::GetExeDirectory()
 
@@ -64,13 +79,11 @@ class ConfigUtilities {
         throw "No IWAD was found!"
     }
 
-    # Equivalent to 'public static bool IsIwad(string path)'
     static [bool] IsIwad([string] $path) {
         $name = ([System.IO.Path]::GetFileName($path)).ToUpper()
         return [ConfigUtilities]::iwadNames -contains $name
     }
 
-    # Equivalent to 'public static string[] GetWadPaths(CommandLineArgs args)'
     static [string[]] GetWadPaths($args) {
         $wadPaths = @()
         $mArgs = [CommandLineArgs]::new($args)

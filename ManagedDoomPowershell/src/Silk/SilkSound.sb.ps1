@@ -1,3 +1,21 @@
+##
+## Copyright (C) 1993-1996 Id Software, Inc.
+## Copyright (C) 2019-2020 Nobuaki Tanaka
+## Copyright (C) 2026 Oleyska
+##
+## This file is a PowerShell port / modified version of code from ManagedDoom.
+##
+## This program is free software; you can redistribute it and/or modify
+## it under the terms of the GNU General Public License as published by
+## the Free Software Foundation; either version 2 of the License, or
+## (at your option) any later version.
+##
+## This program is distributed in the hope that it will be useful,
+## but WITHOUT ANY WARRANTY; without even the implied warranty of
+## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+## GNU General Public License for more details.
+##
+
 Add-Type -Path (Join-Path ([System.Runtime.InteropServices.RuntimeEnvironment]::GetRuntimeDirectory()) "System.Numerics.Vectors.dll")
 
 class SilkSound : ISound{
@@ -60,10 +78,8 @@ class SilkSound : ISound{
                     $this.amplitudes[$i] = [SilkSound]::GetAmplitude($samples, $sampleRate, $sampleCount)
                 }
             }
-            #$this.channels = New-Object 'DrippyAL.AudioChannel[]' ([SilkSound]::channelCount)
             $this.channels = [DrippyAL.AudioChannel[]]::new([SilkSound]::channelCount)
 
-            #$this.infos = New-Object 'ChannelInfo[]' ([SilkSound]::channelCount)
             $this.infos = [ChannelInfo[]]::new([SilkSound]::channelCount)
 
             for ($i = 0; $i -lt $this.channels.Length; $i++) {

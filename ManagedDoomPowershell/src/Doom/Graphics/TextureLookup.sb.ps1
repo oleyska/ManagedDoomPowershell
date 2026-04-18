@@ -1,9 +1,25 @@
+##
+## Copyright (C) 1993-1996 Id Software, Inc.
+## Copyright (C) 2019-2020 Nobuaki Tanaka
+## Copyright (C) 2026 Oleyska
+##
+## This file is a PowerShell port / modified version of code from ManagedDoom.
+##
+## This program is free software; you can redistribute it and/or modify
+## it under the terms of the GNU General Public License as published by
+## the Free Software Foundation; either version 2 of the License, or
+## (at your option) any later version.
+##
+## This program is distributed in the hope that it will be useful,
+## but WITHOUT ANY WARRANTY; without even the implied warranty of
+## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+## GNU General Public License for more details.
+##
+
 #needs [ITextureLookup]
 class TextureLookup : ITextureLookup {
     [System.Collections.Generic.List[Texture]]$Textures
-    #[hashtable]$NameToTexture
     [System.Collections.Generic.Dictionary[string,Texture]]$NameToTexture
-    #[hashtable]$NameToNumber
     [System.Collections.Generic.Dictionary[string,int]]$NameToNumber
     [int[]]$SwitchList
 
@@ -19,9 +35,7 @@ class TextureLookup : ITextureLookup {
 
     [void] InitLookup([Wad]$wad) {
         $this.Textures = [System.Collections.Generic.List[Texture]]::new()
-        #$this.NameToTexture = @{}
         $this.NameToTexture = [System.Collections.Generic.Dictionary[string,Texture]]::new()
-        #$this.NameToNumber = @{}
         $this.NameToNumber = [System.Collections.Generic.Dictionary[string,int]]::new()
 
         $patches = [TextureLookup]::LoadPatches($wad)
@@ -37,10 +51,8 @@ class TextureLookup : ITextureLookup {
             for ($i = 0; $i -lt $count; $i++) {
                 $offset = [BitConverter]::ToInt32($data, 4 + 4 * $i)
                 $texture = [Texture]::FromData($data, $offset, $patches)
-                #$this.NameToNumber[$texture.Name] = $this.Textures.Count
                 $this.NameToNumber.TryAdd($texture.Name, $this.Textures.Count) 
                 $this.Textures.Add($texture)
-                #$this.NameToTexture[$texture.Name] = $texture
                 $this.NameToTexture.TryAdd($texture.Name, $texture)
             }
         }
@@ -53,8 +65,8 @@ class TextureLookup : ITextureLookup {
             $switchNameTuplesEnumerator = $switchNameTuplesEnumerable.GetEnumerator()
             for (; $switchNameTuplesEnumerator.MoveNext(); ) {
                 $tuple = $switchNameTuplesEnumerator.Current
-                $texNum1 = $this.GetNumber($tuple.Item1)
-                $texNum2 = $this.GetNumber($tuple.Item2)
+                $texNum1 = $this.GetNumber($tuple[0])
+                $texNum2 = $this.GetNumber($tuple[1])
                 if ($texNum1 -ne -1 -and $texNum2 -ne -1) {
                     $list.Add($texNum1)
                     $list.Add($texNum2)
@@ -79,7 +91,6 @@ class TextureLookup : ITextureLookup {
 
     static [Patch[]] LoadPatches([Wad]$wad) {
         $patchNames = [TextureLookup]::LoadPatchNames($wad)
-        #$patches = New-Object Patch[] $patchNames.Length
         $patches = [Patch[]]::new($patchNames.Length)
 
         for ($i = 0; $i -lt $patches.Length; $i++) {

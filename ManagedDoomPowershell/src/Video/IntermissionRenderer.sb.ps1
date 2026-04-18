@@ -1,3 +1,21 @@
+##
+## Copyright (C) 1993-1996 Id Software, Inc.
+## Copyright (C) 2019-2020 Nobuaki Tanaka
+## Copyright (C) 2026 Oleyska
+##
+## This file is a PowerShell port / modified version of code from ManagedDoom.
+##
+## This program is free software; you can redistribute it and/or modify
+## it under the terms of the GNU General Public License as published by
+## the Free Software Foundation; either version 2 of the License, or
+## (at your option) any later version.
+##
+## This program is distributed in the hope that it will be useful,
+## but WITHOUT ANY WARRANTY; without even the implied warranty of
+## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+## GNU General Public License for more details.
+##
+
 class IntermissionRenderer {
     # GLOBAL LOCATIONS
     static [int] $titleY = 2
@@ -119,8 +137,8 @@ class IntermissionRenderer {
         }
         else {
             $e = $im.Options.Episode - 1
-            if ($e -lt $this.mapPictures.Length) {
-                $this.DrawPatch($this.mapPictures[$e], 0, 0)
+            if ($e -lt [IntermissionRenderer]::mapPictures.Length) {
+                $this.DrawPatch([IntermissionRenderer]::mapPictures[$e], 0, 0)
             }
             else {
                 $this.DrawPatch("INTERPIC", 0, 0)
@@ -142,62 +160,62 @@ class IntermissionRenderer {
 
         $this.DrawPatch(
             "WIOSTK",  # KILLS
-            $this.spStatsX,
-            $this.spStatsY
+            [IntermissionRenderer]::spStatsX,
+            [IntermissionRenderer]::spStatsY
         )
 
         $this.DrawPercent(
-            320 - $this.spStatsX,
-            $this.spStatsY,
+            320 - [IntermissionRenderer]::spStatsX,
+            [IntermissionRenderer]::spStatsY,
             $im.KillCount[0]
         )
 
         $this.DrawPatch(
             "WIOSTI",  # ITEMS
-            $this.spStatsX,
-            $this.spStatsY + $lineHeight
+            [IntermissionRenderer]::spStatsX,
+            [IntermissionRenderer]::spStatsY + $lineHeight
         )
 
         $this.DrawPercent(
-            320 - $this.spStatsX,
-            $this.spStatsY + $lineHeight,
+            320 - [IntermissionRenderer]::spStatsX,
+            [IntermissionRenderer]::spStatsY + $lineHeight,
             $im.ItemCount[0]
         )
 
         $this.DrawPatch(
             "WISCRT2",  # SECRET
-            $this.spStatsX,
-            $this.spStatsY + 2 * $lineHeight
+            [IntermissionRenderer]::spStatsX,
+            [IntermissionRenderer]::spStatsY + 2 * $lineHeight
         )
 
         $this.DrawPercent(
-            320 - $this.spStatsX,
-            $this.spStatsY + 2 * $lineHeight,
+            320 - [IntermissionRenderer]::spStatsX,
+            [IntermissionRenderer]::spStatsY + 2 * $lineHeight,
             $im.SecretCount[0]
         )
 
         $this.DrawPatch(
             "WITIME",  # TIME
-            $this.spTimeX,
-            $this.spTimeY
+            [IntermissionRenderer]::spTimeX,
+            [IntermissionRenderer]::spTimeY
         )
 
         $this.DrawTime(
-            (320 / 2) - $this.spTimeX,
-            $this.spTimeY,
+            (320 / 2) - [IntermissionRenderer]::spTimeX,
+            [IntermissionRenderer]::spTimeY,
             $im.TimeCount
         )
 
         if ($im.Info.Episode -lt 3) {
             $this.DrawPatch(
                 "WIPAR",  # PAR
-                (320 / 2) + $this.spTimeX,
-                $this.spTimeY
+                (320 / 2) + [IntermissionRenderer]::spTimeX,
+                [IntermissionRenderer]::spTimeY
             )
 
             $this.DrawTime(
-                320 - $this.spTimeX,
-                $this.spTimeY,
+                320 - [IntermissionRenderer]::spTimeX,
+                [IntermissionRenderer]::spTimeY,
                 $im.ParCount
             )
         }
@@ -219,32 +237,32 @@ class IntermissionRenderer {
         # Draw stat titles (top line).
         $this.DrawPatch(
             "WIOSTK",  # KILLS
-            $ngStatsX + $this.ngSpacingX - $this.GetWidth("WIOSTK"),
-            $this.ngStatsY
+            $ngStatsX + [IntermissionRenderer]::ngSpacingX - $this.GetWidth("WIOSTK"),
+            [IntermissionRenderer]::ngStatsY
         )
 
         $this.DrawPatch(
             "WIOSTI",  # ITEMS
-            $ngStatsX + 2 * $this.ngSpacingX - $this.GetWidth("WIOSTI"),
-            $this.ngStatsY
+            $ngStatsX + 2 * [IntermissionRenderer]::ngSpacingX - $this.GetWidth("WIOSTI"),
+            [IntermissionRenderer]::ngStatsY
         )
 
         $this.DrawPatch(
             "WIOSTS",  # SCRT
-            $ngStatsX + 3 * $this.ngSpacingX - $this.GetWidth("WIOSTS"),
-            $this.ngStatsY
+            $ngStatsX + 3 * [IntermissionRenderer]::ngSpacingX - $this.GetWidth("WIOSTS"),
+            [IntermissionRenderer]::ngStatsY
         )
 
         if ($im.DoFrags) {
             $this.DrawPatch(
                 "WIFRGS",  # FRAGS
-                $ngStatsX + 4 * $this.ngSpacingX - $this.GetWidth("WIFRGS"),
-                $this.ngStatsY
+                $ngStatsX + 4 * [IntermissionRenderer]::ngSpacingX - $this.GetWidth("WIFRGS"),
+                [IntermissionRenderer]::ngStatsY
             )
         }
 
         # Draw stats.
-        $y = $this.ngStatsY + $this.GetHeight("WIOSTK")
+        $y = [IntermissionRenderer]::ngStatsY + $this.GetHeight("WIOSTK")
 
         for ($i = 0; $i -lt [Player]::MaxPlayerCount; $i++) {
             if (-not $im.Options.Players[$i].InGame) {
@@ -254,35 +272,35 @@ class IntermissionRenderer {
             $x = $ngStatsX
 
             $this.DrawPatch(
-                $this.playerBoxes[$i],
-                $x - $this.GetWidth($this.playerBoxes[$i]),
+                [IntermissionRenderer]::playerBoxes[$i],
+                $x - $this.GetWidth([IntermissionRenderer]::playerBoxes[$i]),
                 $y
             )
 
             if ($i -eq $im.Options.ConsolePlayer) {
                 $this.DrawPatch(
                     "STFST01",  # Player face
-                    $x - $this.GetWidth($this.playerBoxes[$i]),
+                    $x - $this.GetWidth([IntermissionRenderer]::playerBoxes[$i]),
                     $y
                 )
             }
 
-            $x += $this.ngSpacingX
+            $x += [IntermissionRenderer]::ngSpacingX
 
             $this.DrawPercent($x - $this.percent.Width, $y + 10, $im.KillCount[$i])
-            $x += $this.ngSpacingX
+            $x += [IntermissionRenderer]::ngSpacingX
 
             $this.DrawPercent($x - $this.percent.Width, $y + 10, $im.ItemCount[$i])
-            $x += $this.ngSpacingX
+            $x += [IntermissionRenderer]::ngSpacingX
 
             $this.DrawPercent($x - $this.percent.Width, $y + 10, $im.SecretCount[$i])
-            $x += $this.ngSpacingX
+            $x += [IntermissionRenderer]::ngSpacingX
 
             if ($im.DoFrags) {
                 $this.DrawNumber($x, $y + 10, $im.FragCount[$i], -1)
             }
 
-            $y += $this.spacingY
+            $y += [IntermissionRenderer]::spacingY
         }
     }
 
@@ -298,78 +316,78 @@ class IntermissionRenderer {
         # Draw stat titles (top line).
         $this.DrawPatch(
             "WIMSTT",  # TOTAL
-            $this.dmTotalsX - $this.GetWidth("WIMSTT") / 2,
-            $this.dmMatrixY - $this.spacingY + 10
+            [IntermissionRenderer]::dmTotalsX - $this.GetWidth("WIMSTT") / 2,
+            [IntermissionRenderer]::dmMatrixY - [IntermissionRenderer]::spacingY + 10
         )
 
         $this.DrawPatch(
             "WIKILRS",  # KILLERS
-            $this.dmKillersX,
-            $this.dmKillersY
+            [IntermissionRenderer]::dmKillersX,
+            [IntermissionRenderer]::dmKillersY
         )
 
         $this.DrawPatch(
             "WIVCTMS",  # VICTIMS
-            $this.dmVictimsX,
-            $this.dmVictimsY
+            [IntermissionRenderer]::dmVictimsX,
+            [IntermissionRenderer]::dmVictimsY
         )
 
         # Draw player boxes.
-        $x = $this.dmMatrixX + $this.dmSpacingX
-        $y = $this.dmMatrixY
+        $x = [IntermissionRenderer]::dmMatrixX + [IntermissionRenderer]::dmSpacingX
+        $y = [IntermissionRenderer]::dmMatrixY
 
         for ($i = 0; $i -lt [Player]::MaxPlayerCount; $i++) {
             if ($im.Options.Players[$i].InGame) {
                 $this.DrawPatch(
-                    $this.playerBoxes[$i],
-                    $x - $this.GetWidth($this.playerBoxes[$i]) / 2,
-                    $this.dmMatrixY - $this.spacingY
+                    [IntermissionRenderer]::playerBoxes[$i],
+                    $x - $this.GetWidth([IntermissionRenderer]::playerBoxes[$i]) / 2,
+                    [IntermissionRenderer]::dmMatrixY - [IntermissionRenderer]::spacingY
                 )
 
                 $this.DrawPatch(
-                    $this.playerBoxes[$i],
-                    $this.dmMatrixX - $this.GetWidth($this.playerBoxes[$i]) / 2,
+                    [IntermissionRenderer]::playerBoxes[$i],
+                    [IntermissionRenderer]::dmMatrixX - $this.GetWidth([IntermissionRenderer]::playerBoxes[$i]) / 2,
                     $y
                 )
 
                 if ($i -eq $im.Options.ConsolePlayer) {
                     $this.DrawPatch(
                         "STFDEAD0",  # Player face (dead)
-                        $x - $this.GetWidth($this.playerBoxes[$i]) / 2,
-                        $this.dmMatrixY - $this.spacingY
+                        $x - $this.GetWidth([IntermissionRenderer]::playerBoxes[$i]) / 2,
+                        [IntermissionRenderer]::dmMatrixY - [IntermissionRenderer]::spacingY
                     )
 
                     $this.DrawPatch(
                         "STFST01",  # Player face
-                        $this.dmMatrixX - $this.GetWidth($this.playerBoxes[$i]) / 2,
+                        [IntermissionRenderer]::dmMatrixX - $this.GetWidth([IntermissionRenderer]::playerBoxes[$i]) / 2,
                         $y
                     )
                 }
             }
 
-            $x += $this.dmSpacingX
-            $y += $this.spacingY
+            $x += [IntermissionRenderer]::dmSpacingX
+            $y += [IntermissionRenderer]::spacingY
         }
 
         # Draw stats.
-        $y = $this.dmMatrixY + 10
+        $y = [IntermissionRenderer]::dmMatrixY + 10
         $w = $this.numbers[0].Width
 
         for ($i = 0; $i -lt [Player]::MaxPlayerCount; $i++) {
-            $x = $this.dmMatrixX + $this.dmSpacingX
+            $x = [IntermissionRenderer]::dmMatrixX + [IntermissionRenderer]::dmSpacingX
 
             if ($im.Options.Players[$i].InGame) {
                 for ($j = 0; $j -lt [Player]::MaxPlayerCount; $j++) {
                     if ($im.Options.Players[$j].InGame) {
                         $this.DrawNumber($x + $w, $y, $im.DeathmatchFrags[$i][$j], 2)
                     }
-                    $x += $this.dmSpacingX
+                    $x += [IntermissionRenderer]::dmSpacingX
                 }
 
-                $this.DrawNumber($this.dmTotalsX + $w, $y, $im.DeathmatchTotals[$i], 2)
+                $this.DrawNumber([IntermissionRenderer]::dmTotalsX + $w, $y, $im.DeathmatchTotals[$i], 2)
             }
 
-            $y += $this.spacingY
+            $y += [IntermissionRenderer]::spacingY
         }
     }
 
@@ -408,7 +426,7 @@ class IntermissionRenderer {
             if ($im.ShowYouAreHere) {
                 $x = [WorldMap]::Locations[$im.Info.Episode][$im.Info.NextLevel].X
                 $y = [WorldMap]::Locations[$im.Info.Episode][$im.Info.NextLevel].Y
-                $this.DrawSuitablePatch($this.youAreHere, $x, $y)
+                $this.DrawSuitablePatch([IntermissionRenderer]::youAreHere, $x, $y)
             }
         }
 
@@ -420,13 +438,13 @@ class IntermissionRenderer {
 
     [void] DrawFinishedLevelName([Intermission] $intermission) {
         $wbs = $intermission.Info
-        $y = $this.titleY
+        $y = [IntermissionRenderer]::titleY
 
         $levelName = if ($intermission.Options.GameMode -ne [GameMode]::Commercial) {
             $e = $intermission.Options.Episode - 1
-            $this.doomLevels[$e][$wbs.LastLevel]
+            [IntermissionRenderer]::doomLevels[$e][$wbs.LastLevel]
         } else {
-            $this.doom2Levels[$wbs.LastLevel]
+            [IntermissionRenderer]::doom2Levels[$wbs.LastLevel]
         }
 
         # Draw level name.
@@ -448,13 +466,13 @@ class IntermissionRenderer {
 
     [void] DrawEnteringLevelName([Intermission] $im) {
         $wbs = $im.Info
-        $y = $this.titleY
+        $y = [IntermissionRenderer]::titleY
 
         $levelName = if ($im.Options.GameMode -ne [GameMode]::Commercial) {
             $e = $im.Options.Episode - 1
-            $this.doomLevels[$e][$wbs.NextLevel]
+            [IntermissionRenderer]::doomLevels[$e][$wbs.NextLevel]
         } else {
-            $this.doom2Levels[$wbs.NextLevel]
+            [IntermissionRenderer]::doom2Levels[$wbs.NextLevel]
         }
 
         # Draw "Entering".
@@ -535,16 +553,17 @@ class IntermissionRenderer {
             $div = 1
 
             do {
-                $n = ($t / $div) % 60
+                $n = [int]([Math]::Truncate($t / $div) % 60)
                 $x = $this.DrawNumber($x, $y, $n, 2) - $this.colon.Width
                 $div *= 60
+                $remaining = [int][Math]::Truncate($t / $div)
 
                 # Draw.
-                if ($div -eq 60 -or $t / $div -ne 0) {
+                if ($div -eq 60 -or $remaining -ne 0) {
                     $this.DrawPatch($this.colon, $x, $y)
                 }
             }
-            while ($t / $div -ne 0)
+            while ($remaining -ne 0)
         } else {
             $this.DrawPatch(
                 "WISUCKS",  # SUCKS

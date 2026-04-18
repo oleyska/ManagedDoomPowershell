@@ -1,3 +1,21 @@
+##
+## Copyright (C) 1993-1996 Id Software, Inc.
+## Copyright (C) 2019-2020 Nobuaki Tanaka
+## Copyright (C) 2026 Oleyska
+##
+## This file is a PowerShell port / modified version of code from ManagedDoom.
+##
+## This program is free software; you can redistribute it and/or modify
+## it under the terms of the GNU General Public License as published by
+## the Free Software Foundation; either version 2 of the License, or
+## (at your option) any later version.
+##
+## This program is distributed in the hope that it will be useful,
+## but WITHOUT ANY WARRANTY; without even the implied warranty of
+## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+## GNU General Public License for more details.
+##
+
 class PlayerBehavior {
     static [int[]]$ForwardMove = @(0x19, 0x32)
     static [int[]]$SideMove = @(0x18, 0x28)
@@ -19,10 +37,10 @@ class PlayerBehavior {
             $player.MessageTime--
         }
 
-        if ($player.Cheats -band [CheatFlags]::NoClip) {
-            $player.Mobj.Flags = $player.Mobj.Flags -bor [MobjFlags]::NoClip
+        if (($player.Cheats -band [CheatFlags]::NoClip) -ne 0) {
+            $player.Mobj.Flags = [MobjFlags]([int]$player.Mobj.Flags -bor [int][MobjFlags]::NoClip)
         } else {
-            $player.Mobj.Flags = $player.Mobj.Flags -band (-bnot [MobjFlags]::NoClip)
+            $player.Mobj.Flags = [MobjFlags]([int]$player.Mobj.Flags -band (-bnot [int][MobjFlags]::NoClip))
         }
 
         # Chainsaw run forward

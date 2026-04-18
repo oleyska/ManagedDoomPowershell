@@ -1,3 +1,21 @@
+##
+## Copyright (C) 1993-1996 Id Software, Inc.
+## Copyright (C) 2019-2020 Nobuaki Tanaka
+## Copyright (C) 2026 Oleyska
+##
+## This file is a PowerShell port / modified version of code from ManagedDoom.
+##
+## This program is free software; you can redistribute it and/or modify
+## it under the terms of the GNU General Public License as published by
+## the Free Software Foundation; either version 2 of the License, or
+## (at your option) any later version.
+##
+## This program is distributed in the hope that it will be useful,
+## but WITHOUT ANY WARRANTY; without even the implied warranty of
+## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+## GNU General Public License for more details.
+##
+
 class SilkUserInput : IUserInput {
     [Config] $Config
     [Silk.NET.Windowing.IWindow] $Window
@@ -5,7 +23,7 @@ class SilkUserInput : IUserInput {
     [Silk.NET.Input.IInputContext] $Input
     [Silk.NET.Input.IKeyboard] $Keyboard
     [Silk.NET.Input.Key[]] $TrackedKeys
-    [hashtable] $PreviousKeyStates
+    [bool[]] $PreviousTrackedKeyStates
     [bool[]] $WeaponKeys
     [int] $TurnHeld
     [int] $DebugCmdCount
@@ -32,7 +50,6 @@ class SilkUserInput : IUserInput {
             $this.input = $method.Invoke($null, @($window))
             $this.Keyboard = $this.Input.Keyboards[0]
             $this.TrackedKeys = @()
-            $this.PreviousKeyStates = @{}
             $doomKeysEnumerable = [enum]::GetValues([DoomKey])
             if ($null -ne $doomKeysEnumerable) {
                 $doomKeysEnumerator = $doomKeysEnumerable.GetEnumerator()
@@ -48,11 +65,11 @@ class SilkUserInput : IUserInput {
                     }
 
                     $this.TrackedKeys += $silkKey
-                    $this.PreviousKeyStates[$silkKey] = $false
 
                 }
             }
 
+            $this.PreviousTrackedKeyStates = [bool[]]::new($this.TrackedKeys.Length)
             $this.WeaponKeys = New-Object 'bool[]' 7
             $this.TurnHeld = 0
             $this.DebugCmdCount = 0
@@ -71,27 +88,35 @@ class SilkUserInput : IUserInput {
         }
     }
     [void] PollEvents() {
-        if ($null -eq $this.Keyboard -or $null -eq $this.Doom) {
+        $localKeyboard = $this.Keyboard
+        $localDoom = $this.Doom
+        if ($null -eq $localKeyboard -or $null -eq $localDoom) {
             return
         }
 
-        $trackedKeysEnumerable = $this.TrackedKeys
-        if ($null -ne $trackedKeysEnumerable) {
-            $trackedKeysEnumerator = $trackedKeysEnumerable.GetEnumerator()
-            for (; $trackedKeysEnumerator.MoveNext(); ) {
-                $key = $trackedKeysEnumerator.Current
-                $isPressed = $this.Keyboard.IsKeyPressed($key)
-                $wasPressed = [bool]$this.PreviousKeyStates[$key]
+        $localTrackedKeys = $this.TrackedKeys
+        if ($null -eq $localTrackedKeys) {
+            return
+        }
 
-                if ($isPressed -and -not $wasPressed) {
-                    $this.Doom.KeyDown($key)
-                } elseif (-not $isPressed -and $wasPressed) {
-                    $this.Doom.KeyUp($key)
-                }
+        $previousStates = $this.PreviousTrackedKeyStates
+        if ($null -eq $previousStates -or $previousStates.Length -ne $localTrackedKeys.Length) {
+            $previousStates = [bool[]]::new($localTrackedKeys.Length)
+            $this.PreviousTrackedKeyStates = $previousStates
+        }
 
-                $this.PreviousKeyStates[$key] = $isPressed
+        for ($i = 0; $i -lt $localTrackedKeys.Length; $i++) {
+            $key = $localTrackedKeys[$i]
+            $isPressed = $localKeyboard.IsKeyPressed($key)
+            $wasPressed = $previousStates[$i]
 
+            if ($isPressed -and -not $wasPressed) {
+                $localDoom.KeyDown($key)
+            } elseif (-not $isPressed -and $wasPressed) {
+                $localDoom.KeyUp($key)
             }
+
+            $previousStates[$i] = $isPressed
         }
     }
     [void] BuildTicCmd([TicCmd] $cmd) {

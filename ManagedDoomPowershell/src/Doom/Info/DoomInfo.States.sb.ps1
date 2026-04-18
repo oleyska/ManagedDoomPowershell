@@ -1,3 +1,21 @@
+##
+## Copyright (C) 1993-1996 Id Software, Inc.
+## Copyright (C) 2019-2020 Nobuaki Tanaka
+## Copyright (C) 2026 Oleyska
+##
+## This file is a PowerShell port / modified version of code from ManagedDoom.
+##
+## This program is free software; you can redistribute it and/or modify
+## it under the terms of the GNU General Public License as published by
+## the Free Software Foundation; either version 2 of the License, or
+## (at your option) any later version.
+##
+## This program is distributed in the hope that it will be useful,
+## but WITHOUT ANY WARRANTY; without even the implied warranty of
+## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+## GNU General Public License for more details.
+##
+
 class States {
     [PlayerActions]$pa = [PlayerActions]::new()
     [MobjActions]$ma = [MobjActions]::new()
@@ -979,7 +997,7 @@ class States {
     }
 
     static [void] List() {
-        $doomStatesEnumerable = [States]::All
+        $doomStatesEnumerable = [DoomInfo]::States.All
         if ($null -ne $doomStatesEnumerable) {
             $doomStatesEnumerator = $doomStatesEnumerable.GetEnumerator()
             for (; $doomStatesEnumerator.MoveNext(); ) {
@@ -991,8 +1009,25 @@ class States {
     }
 
     static [MobjStateDef] GetByNumber([int]$number) {
-        write-host "in get by number, maybe consider not doing pipeline ?"
-        return [States]::All | Where-Object { $_.Number -eq $number }
+        $states = [DoomInfo]::States.All
+        if ($null -eq $states) {
+            return $null
+        }
+
+        if ($number -ge 0 -and $number -lt $states.Length) {
+            $state = $states[$number]
+            if ($null -ne $state -and $state.Number -eq $number) {
+                return $state
+            }
+        }
+
+        for ($i = 0; $i -lt $states.Length; $i++) {
+            if ($states[$i].Number -eq $number) {
+                return $states[$i]
+            }
+        }
+
+        return $null
     }
 }
 

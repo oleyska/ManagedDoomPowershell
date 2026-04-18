@@ -1,3 +1,21 @@
+##
+## Copyright (C) 1993-1996 Id Software, Inc.
+## Copyright (C) 2019-2020 Nobuaki Tanaka
+## Copyright (C) 2026 Oleyska
+##
+## This file is a PowerShell port / modified version of code from ManagedDoom.
+##
+## This program is free software; you can redistribute it and/or modify
+## it under the terms of the GNU General Public License as published by
+## the Free Software Foundation; either version 2 of the License, or
+## (at your option) any later version.
+##
+## This program is distributed in the hope that it will be useful,
+## but WITHOUT ANY WARRANTY; without even the implied warranty of
+## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+## GNU General Public License for more details.
+##
+
 class MonsterBehavior {
     [World] $world
 
@@ -1444,32 +1462,32 @@ class MonsterBehavior {
         $this.world.StartSound($fog, [Sfx]::TELEPT, [SfxType]::Misc)
 
         $r = $this.world.Random.Next()
-        #[MobjType]$function:type is needed because I cannot declare a empty value, and I need to access to value outside the scriptscopes of if's so I didn't want to add enum none.
+        [MobjType]$spawnType = [MobjType]::Troop
         if ($r -lt 50) {
-            [MobjType]$function:type = [MobjType]::Troop 
+            $spawnType = [MobjType]::Troop
         } elseif ($r -lt 90) {
-            [MobjType]$function:type = [MobjType]::Sergeant
+            $spawnType = [MobjType]::Sergeant
         } elseif ($r -lt 120) {
-            [MobjType]$function:type = [MobjType]::Shadows
+            $spawnType = [MobjType]::Shadows
         } elseif ($r -lt 130) {
-            [MobjType]$function:type = [MobjType]::Pain
+            $spawnType = [MobjType]::Pain
         } elseif ($r -lt 160) {
-            [MobjType]$function:type = [MobjType]::Head
+            $spawnType = [MobjType]::Head
         } elseif ($r -lt 162) {
-            [MobjType]$function:type = [MobjType]::Vile
+            $spawnType = [MobjType]::Vile
         } elseif ($r -lt 172) {
-            [MobjType]$function:type = [MobjType]::Undead
+            $spawnType = [MobjType]::Undead
         } elseif ($r -lt 192) {
-            [MobjType]$function:type = [MobjType]::Baby
+            $spawnType = [MobjType]::Baby
         } elseif ($r -lt 222) {
-            [MobjType]$function:type = [MobjType]::Fatso
+            $spawnType = [MobjType]::Fatso
         } elseif ($r -lt 246) {
-            [MobjType]$function:type = [MobjType]::Knight
+            $spawnType = [MobjType]::Knight
         } else {
-            [MobjType]$function:type = [MobjType]::Bruiser
+            $spawnType = [MobjType]::Bruiser
         }
 
-        $monster = $ta.SpawnMobj($target.X, $target.Y, $target.Z, $function:type)
+        $monster = $ta.SpawnMobj($target.X, $target.Y, $target.Z, $spawnType)
         if ($this.LookForPlayers($monster, $true)) {
             $monster.SetState($monster.Info.SeeState)
         }

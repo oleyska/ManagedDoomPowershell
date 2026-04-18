@@ -1,3 +1,21 @@
+##
+## Copyright (C) 1993-1996 Id Software, Inc.
+## Copyright (C) 2019-2020 Nobuaki Tanaka
+## Copyright (C) 2026 Oleyska
+##
+## This file is a PowerShell port / modified version of code from ManagedDoom.
+##
+## This program is free software; you can redistribute it and/or modify
+## it under the terms of the GNU General Public License as published by
+## the Free Software Foundation; either version 2 of the License, or
+## (at your option) any later version.
+##
+## This program is distributed in the hope that it will be useful,
+## but WITHOUT ANY WARRANTY; without even the implied warranty of
+## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+## GNU General Public License for more details.
+##
+
 class Animation {
     [Intermission]$im
     [int]$number
@@ -48,7 +66,7 @@ class Animation {
     [void]Update([int]$bgCount) {
         if ($bgCount -eq $this.nextTic) {
             switch ($this.type) {
-                [AnimationType]::Always {
+                ([AnimationType]::Always) {
                     if (++$this.patchNumber -ge $this.frameCount) {
                         $this.patchNumber = 0
                     }
@@ -56,7 +74,7 @@ class Animation {
                     break
                 }
 
-                [AnimationType]::Random {
+                ([AnimationType]::Random) {
                     $this.patchNumber++
                     if ($this.patchNumber -eq $this.frameCount) {
                         $this.patchNumber = -1
@@ -68,7 +86,7 @@ class Animation {
                     break
                 }
 
-                [AnimationType]::Level {
+                ([AnimationType]::Level) {
                     if (!($this.im.State -eq [IntermissionState]::StatCount -and $this.number -eq 7) -and $this.im.Info.NextLevel -eq $this.Data) {
                         $this.patchNumber++
                         if ($this.patchNumber -eq $this.frameCount) {

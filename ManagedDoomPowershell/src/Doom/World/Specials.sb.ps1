@@ -1,3 +1,21 @@
+##
+## Copyright (C) 1993-1996 Id Software, Inc.
+## Copyright (C) 2019-2020 Nobuaki Tanaka
+## Copyright (C) 2026 Oleyska
+##
+## This file is a PowerShell port / modified version of code from ManagedDoom.
+##
+## This program is free software; you can redistribute it and/or modify
+## it under the terms of the GNU General Public License as published by
+## the Free Software Foundation; either version 2 of the License, or
+## (at your option) any later version.
+##
+## This program is distributed in the hope that it will be useful,
+## but WITHOUT ANY WARRANTY; without even the implied warranty of
+## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+## GNU General Public License for more details.
+##
+
 class Specials {
     static [int] $MaxButtonCount = 32
     static [int] $ButtonTime = 35
@@ -200,9 +218,9 @@ class Specials {
                 $this.ButtonList[$i].Timer--
                 if ($this.ButtonList[$i].Timer -eq 0) {
                     switch ($this.ButtonList[$i].Position) {
-                        ButtonPosition::Top { $this.ButtonList[$i].Line.FrontSide.TopTexture = $this.ButtonList[$i].Texture }
-                        ButtonPosition::Middle { $this.ButtonList[$i].Line.FrontSide.MiddleTexture = $this.ButtonList[$i].Texture }
-                        ButtonPosition::Bottom { $this.ButtonList[$i].Line.FrontSide.BottomTexture = $this.ButtonList[$i].Texture }
+                        ([ButtonPosition]::Top) { $this.ButtonList[$i].Line.FrontSide.TopTexture = $this.ButtonList[$i].Texture }
+                        ([ButtonPosition]::Middle) { $this.ButtonList[$i].Line.FrontSide.MiddleTexture = $this.ButtonList[$i].Texture }
+                        ([ButtonPosition]::Bottom) { $this.ButtonList[$i].Line.FrontSide.BottomTexture = $this.ButtonList[$i].Texture }
                     }
                     $this.World.StartSound($this.ButtonList[$i].SoundOrigin, [Sfx]::SWTCHN, [SfxType]::Misc, 50)
                     $this.ButtonList[$i].Clear()

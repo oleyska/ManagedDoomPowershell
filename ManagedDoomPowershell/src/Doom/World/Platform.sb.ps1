@@ -1,3 +1,21 @@
+##
+## Copyright (C) 1993-1996 Id Software, Inc.
+## Copyright (C) 2019-2020 Nobuaki Tanaka
+## Copyright (C) 2026 Oleyska
+##
+## This file is a PowerShell port / modified version of code from ManagedDoom.
+##
+## This program is free software; you can redistribute it and/or modify
+## it under the terms of the GNU General Public License as published by
+## the Free Software Foundation; either version 2 of the License, or
+## (at your option) any later version.
+##
+## This program is distributed in the hope that it will be useful,
+## but WITHOUT ANY WARRANTY; without even the implied warranty of
+## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+## GNU General Public License for more details.
+##
+
 #Needs [Thinker]
 
 class Platform : Thinker {
@@ -23,53 +41,54 @@ class Platform : Thinker {
         $result = $null
 
         switch ($this.Status) {
-            "Up" {
+            ([PlatformState]::Up) {
                 $result = $sa.MovePlane($this.Sector, $this.Speed, $this.High, $this.Crush, 0, 1)
 
-                if ($this.Type -in @("RaiseAndChange", "RaiseToNearestAndChange")) {
+                if ($this.Type -in @([PlatformType]::RaiseAndChange, [PlatformType]::RaiseToNearestAndChange)) {
                     if ((($this.World.LevelTime + $this.Sector.Number) -band 7) -eq 0) {
-                        $this.World.StartSound($this.Sector.SoundOrigin, "STNMOV", "Misc")
+                        $this.World.StartSound($this.Sector.SoundOrigin, [Sfx]::STNMOV, [SfxType]::Misc)
                     }
                 }
 
-                if ($result -eq "Crushed" -and -not $this.Crush) {
+                if ($result -eq [SectorActionResult]::Crushed -and -not $this.Crush) {
                     $this.Count = $this.Wait
-                    $this.Status = "Down"
-                    $this.World.StartSound($this.Sector.SoundOrigin, "PSTART", "Misc")
-                } elseif ($result -eq "PastDestination") {
+                    $this.Status = [PlatformState]::Down
+                    $this.World.StartSound($this.Sector.SoundOrigin, [Sfx]::PSTART, [SfxType]::Misc)
+                } elseif ($result -eq [SectorActionResult]::PastDestination) {
                     $this.Count = $this.Wait
-                    $this.Status = "Waiting"
-                    $this.World.StartSound($this.Sector.SoundOrigin, "PSTOP", "Misc")
+                    $this.Status = [PlatformState]::Waiting
+                    $this.World.StartSound($this.Sector.SoundOrigin, [Sfx]::PSTOP, [SfxType]::Misc)
 
-                    if ($this.Type -in @("BlazeDwus", "DownWaitUpStay", "RaiseAndChange", "RaiseToNearestAndChange")) {
+                    if ($this.Type -in @([PlatformType]::BlazeDwus, [PlatformType]::DownWaitUpStay, [PlatformType]::RaiseAndChange, [PlatformType]::RaiseToNearestAndChange)) {
                         $sa.RemoveActivePlatform($this)
                         $this.Sector.DisableFrameInterpolationForOneFrame()
                     }
                 }
             }
 
-            "Down" {
+            ([PlatformState]::Down) {
                 $result = $sa.MovePlane($this.Sector, $this.Speed, $this.Low, $false, 0, -1)
 
-                if ($result -eq "PastDestination") {
+                if ($result -eq [SectorActionResult]::PastDestination) {
                     $this.Count = $this.Wait
-                    $this.Status = "Waiting"
-                    $this.World.StartSound($this.Sector.SoundOrigin, "PSTOP", "Misc")
+                    $this.Status = [PlatformState]::Waiting
+                    $this.World.StartSound($this.Sector.SoundOrigin, [Sfx]::PSTOP, [SfxType]::Misc)
                 }
             }
 
-            "Waiting" {
-                if (--$this.Count -eq 0) {
-                    if ($this.Sector.FloorHeight -eq $this.Low) {
-                        $this.Status = "Up"
+            ([PlatformState]::Waiting) {
+                $this.Count--
+                if ($this.Count -eq 0) {
+                    if ($this.Sector.FloorHeight.Data -eq $this.Low.Data) {
+                        $this.Status = [PlatformState]::Up
                     } else {
-                        $this.Status = "Down"
+                        $this.Status = [PlatformState]::Down
                     }
-                    $this.World.StartSound($this.Sector.SoundOrigin, "PSTART", "Misc")
+                    $this.World.StartSound($this.Sector.SoundOrigin, [Sfx]::PSTART, [SfxType]::Misc)
                 }
             }
 
-            "InStasis" {
+            ([PlatformState]::InStasis) {
                 # Do nothing
             }
         }

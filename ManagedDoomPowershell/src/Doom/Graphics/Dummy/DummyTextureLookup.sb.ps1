@@ -1,19 +1,35 @@
+##
+## Copyright (C) 1993-1996 Id Software, Inc.
+## Copyright (C) 2019-2020 Nobuaki Tanaka
+## Copyright (C) 2026 Oleyska
+##
+## This file is a PowerShell port / modified version of code from ManagedDoom.
+##
+## This program is free software; you can redistribute it and/or modify
+## it under the terms of the GNU General Public License as published by
+## the Free Software Foundation; either version 2 of the License, or
+## (at your option) any later version.
+##
+## This program is distributed in the hope that it will be useful,
+## but WITHOUT ANY WARRANTY; without even the implied warranty of
+## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+## GNU General Public License for more details.
+##
+
 #needs [ITextureLookup]
 
 class DummyTextureLookup : ITextureLookup {
-    # Fields for textures and lookups
+
     [System.Collections.Generic.List[Texture]]$textureList
     [System.Collections.Generic.Dictionary[string, Texture]]$nameToTexture
     [System.Collections.Generic.Dictionary[string, int]]$nameToNumber
     [int[]]$switchList
 
-    # Constructor
     DummyTextureLookup([Wad]$wad) {
         $this.InitLookup($wad)
         $this.InitSwitchList()
     }
 
-    # Initialize textures and lookups
     [void] InitLookup([Wad]$wad) {
         $this.textureList = New-Object 'System.Collections.Generic.List[Texture]'
         $this.nameToTexture = New-Object 'System.Collections.Generic.Dictionary[string, Texture]'
@@ -40,7 +56,6 @@ class DummyTextureLookup : ITextureLookup {
         }
     }
 
-    # Initialize switch list
     [void] InitSwitchList() {
         $list = New-Object 'System.Collections.Generic.List[int]'
         $switchNameTuplesEnumerable = [DoomInfo]::SwitchNames
@@ -48,8 +63,8 @@ class DummyTextureLookup : ITextureLookup {
             $switchNameTuplesEnumerator = $switchNameTuplesEnumerable.GetEnumerator()
             for (; $switchNameTuplesEnumerator.MoveNext(); ) {
                 $tuple = $switchNameTuplesEnumerator.Current
-                $texNum1 = $this.GetNumber($tuple.Item1)
-                $texNum2 = $this.GetNumber($tuple.Item2)
+                $texNum1 = $this.GetNumber($tuple[0])
+                $texNum2 = $this.GetNumber($tuple[1])
                 if ($texNum1 -ne -1 -and $texNum2 -ne -1) {
                     $list.Add($texNum1)
                     $list.Add($texNum2)
@@ -73,12 +88,11 @@ class DummyTextureLookup : ITextureLookup {
         }
     }
 
-    # Get enumerator for textures
+
     [System.Collections.Generic.IEnumerator[Texture]] GetEnumerator() {
         return $this.textureList.GetEnumerator()
     }
 
-    # Get enumerator for IEnumerable interface
     [System.Collections.IEnumerator] IEnumerable_GetEnumerator() {
         return $this.textureList.GetEnumerator()
     }

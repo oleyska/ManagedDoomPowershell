@@ -1,3 +1,21 @@
+##
+## Copyright (C) 1993-1996 Id Software, Inc.
+## Copyright (C) 2019-2020 Nobuaki Tanaka
+## Copyright (C) 2026 Oleyska
+##
+## This file is a PowerShell port / modified version of code from ManagedDoom.
+##
+## This program is free software; you can redistribute it and/or modify
+## it under the terms of the GNU General Public License as published by
+## the Free Software Foundation; either version 2 of the License, or
+## (at your option) any later version.
+##
+## This program is distributed in the hope that it will be useful,
+## but WITHOUT ANY WARRANTY; without even the implied warranty of
+## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+## GNU General Public License for more details.
+##
+
 class CeilingMove : Thinker{
     [World] $World
     [CeilingMoveType] $Type
@@ -45,9 +63,9 @@ class CeilingMove : Thinker{
                             $sa.RemoveActiveCeiling($this)
                             $this.Sector.DisableFrameInterpolationForOneFrame()
                         }
-                        ([CeilingMoveType]::SilentCrushAndRaise) {}
-                        ([CeilingMoveType]::FastCrushAndRaise){}
-                        ([CeilingMoveType]::CrushAndRaise) {
+                        { $_ -eq [CeilingMoveType]::SilentCrushAndRaise -or
+                          $_ -eq [CeilingMoveType]::FastCrushAndRaise -or
+                          $_ -eq [CeilingMoveType]::CrushAndRaise } {
                             if ($this.Type -eq [CeilingMoveType]::SilentCrushAndRaise) {
                                 $this.World.StartSound($this.Sector.SoundOrigin, [Sfx]::PSTOP, [SfxType]::Misc)
                             }
@@ -75,9 +93,9 @@ class CeilingMove : Thinker{
 
                 if ($result -eq [SectorActionResult]::PastDestination) {
                     switch ($this.Type) {
-                        ([CeilingMoveType]::SilentCrushAndRaise){}
-                        ([CeilingMoveType]::CrushAndRaise){}
-                        ([CeilingMoveType]::FastCrushAndRaise) {
+                        { $_ -eq [CeilingMoveType]::SilentCrushAndRaise -or
+                          $_ -eq [CeilingMoveType]::CrushAndRaise -or
+                          $_ -eq [CeilingMoveType]::FastCrushAndRaise } {
                             if ($this.Type -eq [CeilingMoveType]::SilentCrushAndRaise) {
                                 $this.World.StartSound($this.Sector.SoundOrigin, [Sfx]::PSTOP, [SfxType]::Misc)
                                 $this.Speed = [SectorAction]::CeilingSpeed
@@ -87,8 +105,8 @@ class CeilingMove : Thinker{
                             }
                             $this.Direction = 1
                         }
-                        ([CeilingMoveType]::LowerAndCrush){}
-                        ([CeilingMoveType]::LowerToFloor) {
+                        { $_ -eq [CeilingMoveType]::LowerAndCrush -or
+                          $_ -eq [CeilingMoveType]::LowerToFloor } {
                             $sa.RemoveActiveCeiling($this)
                             $this.Sector.DisableFrameInterpolationForOneFrame()
                         }

@@ -1,3 +1,21 @@
+##
+## Copyright (C) 1993-1996 Id Software, Inc.
+## Copyright (C) 2019-2020 Nobuaki Tanaka
+## Copyright (C) 2026 Oleyska
+##
+## This file is a PowerShell port / modified version of code from ManagedDoom.
+##
+## This program is free software; you can redistribute it and/or modify
+## it under the terms of the GNU General Public License as published by
+## the Free Software Foundation; either version 2 of the License, or
+## (at your option) any later version.
+##
+## This program is distributed in the hope that it will be useful,
+## but WITHOUT ANY WARRANTY; without even the implied warranty of
+## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+## GNU General Public License for more details.
+##
+
 class DoomGame {
     [GameContent] $content
     [GameOptions] $options
@@ -174,6 +192,7 @@ class DoomGame {
 
     [void] DoCompleted() {
         $this.gameAction = [GameAction]::Nothing
+        $this.PrepareIntermissionInfo()
         $optionsPlayersEnumerable = $this.options.Players
         if ($null -ne $optionsPlayersEnumerable) {
             $optionsPlayersEnumerator = $optionsPlayersEnumerable.GetEnumerator()
@@ -181,6 +200,9 @@ class DoomGame {
                 $player = $optionsPlayersEnumerator.Current
                 if ($player.InGame) {
                     $player.FinishLevel()
+                    $player.Cmd.Clear()
+                    $player.AttackDown = $false
+                    $player.UseDown = $false
                 }
 
             }
@@ -188,6 +210,91 @@ class DoomGame {
         $this.gameState = [GameState]::Intermission
         $this.State = $this.gameState
         $this.intermission = [Intermission]::new($this.options, $this.options.IntermissionInfo)
+    }
+
+    hidden [void] PrepareIntermissionInfo() {
+        $localOptions = $this.options
+        $localWorld = $this.world
+        $info = $localOptions.IntermissionInfo
+
+        $info.Episode = [math]::Clamp($localOptions.Episode - 1, 0, 3)
+        $info.LastLevel = [math]::Clamp($localOptions.Map - 1, 0, 31)
+        $info.NextLevel = [math]::Clamp(($this.GetNextIntermissionMap() - 1), 0, 31)
+        $info.MaxKillCount = [math]::Max($localWorld.TotalKills, 1)
+        $info.MaxItemCount = [math]::Max($localWorld.TotalItems, 1)
+        $info.MaxSecretCount = [math]::Max($localWorld.TotalSecrets, 1)
+        $info.ParTime = $this.GetParTime()
+
+        $info.DidSecret = ($localWorld.SecretExit -or $localOptions.Map -eq 9)
+
+        $players = $localOptions.Players
+        for ($i = 0; $i -lt [Player]::MaxPlayerCount; $i++) {
+            $player = $players[$i]
+            $score = $info.Players[$i]
+            $score.InGame = $player.InGame
+            $score.KillCount = $player.KillCount
+            $score.ItemCount = $player.ItemCount
+            $score.SecretCount = $player.SecretCount
+            $score.Time = $localWorld.LevelTime
+
+            for ($j = 0; $j -lt [Player]::MaxPlayerCount; $j++) {
+                $score.Frags[$j] = $player.Frags[$j]
+            }
+        }
+    }
+
+    hidden [int] GetNextIntermissionMap() {
+        $localOptions = $this.options
+
+        if ($localOptions.GameMode -eq [GameMode]::Commercial) {
+            if ($this.world.SecretExit) {
+                if ($localOptions.Map -eq 15) {
+                    return 31
+                }
+                if ($localOptions.Map -eq 31) {
+                    return 32
+                }
+            }
+
+            if ($localOptions.Map -eq 31 -or $localOptions.Map -eq 32) {
+                return 16
+            }
+
+            return [math]::Min($localOptions.Map + 1, 32)
+        }
+
+        if ($this.world.SecretExit) {
+            return 9
+        }
+
+        if ($localOptions.Map -eq 9) {
+            switch ($localOptions.Episode) {
+                1 { return 4 }
+                2 { return 6 }
+                3 { return 7 }
+                default { return [math]::Min($localOptions.Map + 1, 9) }
+            }
+        }
+
+        return [math]::Min($localOptions.Map + 1, 9)
+    }
+
+    hidden [int] GetParTime() {
+        $localOptions = $this.options
+
+        try {
+            if ($localOptions.GameMode -eq [GameMode]::Commercial) {
+                $parTimes = [DoomInfo]::ParTimes["Doom2"]
+                return [int]$parTimes[[math]::Clamp($localOptions.Map - 1, 0, 31)]
+            }
+
+            $episodeTimes = [DoomInfo]::ParTimes["Doom1"]
+            $episode = [math]::Clamp($localOptions.Episode - 1, 0, 3)
+            $map = [math]::Clamp($localOptions.Map - 1, 0, 8)
+            return [int]$episodeTimes[$episode][$map]
+        } catch {
+            return 180
+        }
     }
 
     [void] DoWorldDone() {

@@ -1,6 +1,22 @@
-class Texture {
-    #static [int]$DataSize = 10 #uneeded... I think
+##
+## Copyright (C) 1993-1996 Id Software, Inc.
+## Copyright (C) 2019-2020 Nobuaki Tanaka
+## Copyright (C) 2026 Oleyska
+##
+## This file is a PowerShell port / modified version of code from ManagedDoom.
+##
+## This program is free software; you can redistribute it and/or modify
+## it under the terms of the GNU General Public License as published by
+## the Free Software Foundation; either version 2 of the License, or
+## (at your option) any later version.
+##
+## This program is distributed in the hope that it will be useful,
+## but WITHOUT ANY WARRANTY; without even the implied warranty of
+## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+## GNU General Public License for more details.
+##
 
+class Texture {
     [string]$Name
     [bool]$Masked
     [int]$Width
@@ -31,15 +47,6 @@ class Texture {
         }
 
         $texture = [Texture]::new($mname, $mmasked -ne 0, $mwidth, $mheight, $mpatches)
-        if ($mname -eq 'AASTINKY') {
-            [Console]::WriteLine(
-                ("TextureLoadTrace name={0} width={1} height={2} patches={3} compositeCols={4}" -f
-                    $texture.Name,
-                    $texture.Width,
-                    $texture.Height,
-                    $texture.Patches.Length,
-                    $texture.Composite.Columns.Length))
-        }
 
         return $texture
     }

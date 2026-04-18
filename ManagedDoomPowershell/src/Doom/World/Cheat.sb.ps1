@@ -1,3 +1,21 @@
+##
+## Copyright (C) 1993-1996 Id Software, Inc.
+## Copyright (C) 2019-2020 Nobuaki Tanaka
+## Copyright (C) 2026 Oleyska
+##
+## This file is a PowerShell port / modified version of code from ManagedDoom.
+##
+## This program is free software; you can redistribute it and/or modify
+## it under the terms of the GNU General Public License as published by
+## the Free Software Foundation; either version 2 of the License, or
+## (at your option) any later version.
+##
+## This program is distributed in the hope that it will be useful,
+## but WITHOUT ANY WARRANTY; without even the implied warranty of
+## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+## GNU General Public License for more details.
+##
+
 class CheatInfo {
     [string] $Code
     [ScriptBlock] $Action
@@ -34,7 +52,13 @@ class Cheat {
 
     Cheat([World] $world) {
         $this.World = $world
-        $this.Buffer = [char[]]::new(([Cheat]::List | Measure-Object -Property Code -Maximum).Maximum.Length)
+        $maxCodeLength = 0
+        for ($i = 0; $i -lt [Cheat]::List.Length; $i++) {
+            if ([Cheat]::List[$i].Code.Length -gt $maxCodeLength) {
+                $maxCodeLength = [Cheat]::List[$i].Code.Length
+            }
+        }
+        $this.Buffer = [char[]]::new($maxCodeLength)
         $this.P = 0
     }
 
@@ -78,11 +102,36 @@ class Cheat {
                         $typed[$k] = $this.Buffer[$q]
                     }
                     if ($this.World.Options.Skill -ne [GameSkill]::Nightmare -or $cheatInfo.AvailableOnNightmare) {
-                        & $cheatInfo.Action.Invoke($this, -join $typed)
+                        $cheatInfo.Action.Invoke($this, -join $typed)
                     }
                 }
 
             }
+        }
+    }
+
+    [void] GiveWeapons() {
+        $player = $this.World.ConsolePlayer
+        if ($this.World.Options.GameMode -eq [GameMode]::Commercial) {
+            for ($i = 0; $i -lt [int][WeaponType]::Count; $i++) {
+                $player.WeaponOwned[$i] = $true
+            }
+        }
+        else {
+            for ($i = 0; $i -le [int][WeaponType]::Missile; $i++) {
+                $player.WeaponOwned[$i] = $true
+            }
+            $player.WeaponOwned[[int][WeaponType]::Chainsaw] = $true
+            if ($this.World.Options.GameMode -ne [GameMode]::Shareware) {
+                $player.WeaponOwned[[int][WeaponType]::Plasma] = $true
+                $player.WeaponOwned[[int][WeaponType]::Bfg] = $true
+            }
+        }
+
+        $player.Backpack = $true
+        for ($i = 0; $i -lt [int][AmmoType]::Count; $i++) {
+            $player.MaxAmmo[$i] = 2 * [DoomInfo]::AmmoInfos.Max[$i]
+            $player.Ammo[$i] = 2 * [DoomInfo]::AmmoInfos.Max[$i]
         }
     }
 
@@ -120,17 +169,114 @@ class Cheat {
 
     [void] NoClip() {
         $player = $this.World.ConsolePlayer
-        if ($player.Cheats -band [CheatFlags]::NoClip) {
-            $player.Cheats -= [CheatFlags]::NoClip
+        if (($player.Cheats -band [CheatFlags]::NoClip) -ne 0) {
+            $player.Cheats = [CheatFlags]([int]$player.Cheats -band (-bnot [int][CheatFlags]::NoClip))
+            $player.Mobj.Flags = [MobjFlags]([int]$player.Mobj.Flags -band (-bnot [int][MobjFlags]::NoClip))
             $player.SendMessage([DoomInfo]::Strings.STSTR_NCOFF)
         } else {
-            $player.Cheats += [CheatFlags]::NoClip
+            $player.Cheats = [CheatFlags]([int]$player.Cheats -bor [int][CheatFlags]::NoClip)
+            $player.Mobj.Flags = [MobjFlags]([int]$player.Mobj.Flags -bor [int][MobjFlags]::NoClip)
             $player.SendMessage([DoomInfo]::Strings.STSTR_NCON)
         }
     }
 
     [void] FullMap() {
         $this.World.AutoMap.ToggleCheat()
+    }
+
+    [void] ShowPowerUpList() {
+        $player = $this.World.ConsolePlayer
+        $player.SendMessage([DoomInfo]::Strings.STSTR_BEHOLD)
+    }
+
+    [void] DoPowerUp([string] $typed) {
+        $last = $typed[$typed.Length - 1]
+        if ($last -eq [char]'v') {
+            $this.ToggleInvulnerability()
+        }
+        elseif ($last -eq [char]'s') {
+            $this.ToggleStrength()
+        }
+        elseif ($last -eq [char]'i') {
+            $this.ToggleInvisibility()
+        }
+        elseif ($last -eq [char]'r') {
+            $this.ToggleIronFeet()
+        }
+        elseif ($last -eq [char]'a') {
+            $this.ToggleAllMap()
+        }
+        elseif ($last -eq [char]'l') {
+            $this.ToggleInfrared()
+        }
+    }
+
+    [void] ToggleInvulnerability() {
+        $player = $this.World.ConsolePlayer
+        if ($player.Powers[[int][PowerType]::Invulnerability] -gt 0) {
+            $player.Powers[[int][PowerType]::Invulnerability] = 0
+        }
+        else {
+            $player.Powers[[int][PowerType]::Invulnerability] = [DoomInfo]::PowerDuration.Invulnerability
+        }
+        $player.SendMessage([DoomInfo]::Strings.STSTR_BEHOLDX)
+    }
+
+    [void] ToggleStrength() {
+        $player = $this.World.ConsolePlayer
+        if ($player.Powers[[int][PowerType]::Strength] -ne 0) {
+            $player.Powers[[int][PowerType]::Strength] = 0
+        }
+        else {
+            $player.Powers[[int][PowerType]::Strength] = 1
+        }
+        $player.SendMessage([DoomInfo]::Strings.STSTR_BEHOLDX)
+    }
+
+    [void] ToggleInvisibility() {
+        $player = $this.World.ConsolePlayer
+        if ($player.Powers[[int][PowerType]::Invisibility] -gt 0) {
+            $player.Powers[[int][PowerType]::Invisibility] = 0
+            $player.Mobj.Flags = [MobjFlags]([int]$player.Mobj.Flags -band (-bnot [int][MobjFlags]::Shadow))
+        }
+        else {
+            $player.Powers[[int][PowerType]::Invisibility] = [DoomInfo]::PowerDuration.Invisibility
+            $player.Mobj.Flags = [MobjFlags]([int]$player.Mobj.Flags -bor [int][MobjFlags]::Shadow)
+        }
+        $player.SendMessage([DoomInfo]::Strings.STSTR_BEHOLDX)
+    }
+
+    [void] ToggleIronFeet() {
+        $player = $this.World.ConsolePlayer
+        if ($player.Powers[[int][PowerType]::IronFeet] -gt 0) {
+            $player.Powers[[int][PowerType]::IronFeet] = 0
+        }
+        else {
+            $player.Powers[[int][PowerType]::IronFeet] = [DoomInfo]::PowerDuration.IronFeet
+        }
+        $player.SendMessage([DoomInfo]::Strings.STSTR_BEHOLDX)
+    }
+
+    [void] ToggleAllMap() {
+        $player = $this.World.ConsolePlayer
+        if ($player.Powers[[int][PowerType]::AllMap] -ne 0) {
+            $player.Powers[[int][PowerType]::AllMap] = 0
+        }
+        else {
+            $player.Powers[[int][PowerType]::AllMap] = 1
+        }
+        $player.SendMessage([DoomInfo]::Strings.STSTR_BEHOLDX)
+    }
+
+    [void] ToggleInfrared() {
+        $player = $this.World.ConsolePlayer
+        if ($player.Powers[[int][PowerType]::Infrared] -gt 0) {
+            $player.Powers[[int][PowerType]::Infrared] = 0
+        }
+        else {
+            $player.Powers[[int][PowerType]::Infrared] = [DoomInfo]::PowerDuration.Infrared
+        }
+        $player.SendMessage([DoomInfo]::Strings.STSTR_BEHOLDX)
     }
 
     [void] GiveChainsaw() {

@@ -1,3 +1,21 @@
+##
+## Copyright (C) 1993-1996 Id Software, Inc.
+## Copyright (C) 2019-2020 Nobuaki Tanaka
+## Copyright (C) 2026 Oleyska
+##
+## This file is a PowerShell port / modified version of code from ManagedDoom.
+##
+## This program is free software; you can redistribute it and/or modify
+## it under the terms of the GNU General Public License as published by
+## the Free Software Foundation; either version 2 of the License, or
+## (at your option) any later version.
+##
+## This program is distributed in the hope that it will be useful,
+## but WITHOUT ANY WARRANTY; without even the implied warranty of
+## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+## GNU General Public License for more details.
+##
+
 class SectorAction {
     [World] $world
 
@@ -657,6 +675,72 @@ class SectorAction {
         return $false
     }
 
+    [void] TurnTagLightsOff([LineDef] $line) {
+        $sectors = $this.world.Map.Sectors
+
+        for ($i = 0; $i -lt $sectors.Length; $i++) {
+            $sector = $sectors[$i]
+
+            if ($sector.Tag -eq $line.Tag) {
+                $min = $sector.LightLevel
+
+                for ($j = 0; $j -lt $sector.Lines.Length; $j++) {
+                    $target = $this.GetNextSector($sector.Lines[$j], $sector)
+                    if ($null -eq $target) {
+                        continue
+                    }
+
+                    if ($target.LightLevel -lt $min) {
+                        $min = $target.LightLevel
+                    }
+                }
+
+                $sector.LightLevel = $min
+            }
+        }
+    }
+
+    [void] LightTurnOn([LineDef] $line, [int] $bright) {
+        $sectors = $this.world.Map.Sectors
+
+        for ($i = 0; $i -lt $sectors.Length; $i++) {
+            $sector = $sectors[$i]
+
+            if ($sector.Tag -eq $line.Tag) {
+                # bright = 0 means to search for highest light level surrounding sector.
+                if ($bright -eq 0) {
+                    for ($j = 0; $j -lt $sector.Lines.Length; $j++) {
+                        $target = $this.GetNextSector($sector.Lines[$j], $sector)
+                        if ($null -eq $target) {
+                            continue
+                        }
+
+                        if ($target.LightLevel -gt $bright) {
+                            $bright = $target.LightLevel
+                        }
+                    }
+                }
+
+                $sector.LightLevel = $bright
+            }
+        }
+    }
+
+    [void] StartLightStrobing([LineDef] $line) {
+        $sectors = $this.world.Map.Sectors
+        $sectorNumber = -1
+
+        while (($sectorNumber = $this.FindSectorFromLineTag($line, $sectorNumber)) -ge 0) {
+            $sector = $sectors[$sectorNumber]
+
+            if ($null -ne $sector.SpecialData) {
+                continue
+            }
+
+            $this.world.LightingChange.SpawnStrobeFlash($sector, [StrobeFlash]::SlowDark, $false)
+        }
+    }
+
     [bool] DoDoor([LineDef] $line, [VerticalDoorType] $type) {
         $sectors = $this.world.Map.Sectors
         $setcorNumber = -1
@@ -680,7 +764,7 @@ class SectorAction {
             $door.Speed = [SectorAction]::doorSpeed
 
             switch ($type) {
-                [VerticalDoorType]::BlazeClose {
+                ([VerticalDoorType]::BlazeClose) {
                     $door.TopHeight = $this.FindLowestCeilingSurrounding($sector)
                     $door.TopHeight -= [Fixed]::FromInt(4)
                     $door.Direction = -1
@@ -689,7 +773,7 @@ class SectorAction {
                     break
                 }
 
-                [VerticalDoorType]::Close {
+                ([VerticalDoorType]::Close) {
                     $door.TopHeight = $this.FindLowestCeilingSurrounding($sector)
                     $door.TopHeight -= [Fixed]::FromInt(4)
                     $door.Direction = -1
@@ -697,31 +781,29 @@ class SectorAction {
                     break
                 }
 
-                [VerticalDoorType]::Close30ThenOpen {
+                ([VerticalDoorType]::Close30ThenOpen) {
                     $door.TopHeight = $sector.CeilingHeight
                     $door.Direction = -1
                     $this.world.StartSound($door.Sector.SoundOrigin, [Sfx]::DORCLS, [SfxType]::Misc)
                     break
                 }
 
-                [VerticalDoorType]::BlazeRaise {}
-                [VerticalDoorType]::BlazeOpen {
+                { $_ -eq [VerticalDoorType]::BlazeRaise -or $_ -eq [VerticalDoorType]::BlazeOpen } {
                     $door.Direction = 1
                     $door.TopHeight = $this.FindLowestCeilingSurrounding($sector)
                     $door.TopHeight -= [Fixed]::FromInt(4)
                     $door.Speed = [Fixed]::FromInt(8)
-                    if ($door.TopHeight -ne $sector.CeilingHeight) {
+                    if ($door.TopHeight.Data -ne $sector.CeilingHeight.Data) {
                         $this.world.StartSound($door.Sector.SoundOrigin, [Sfx]::BDOPN, [SfxType]::Misc)
                     }
                     break
                 }
 
-                [VerticalDoorType]::Normal {}
-                [VerticalDoorType]::Open {
+                { $_ -eq [VerticalDoorType]::Normal -or $_ -eq [VerticalDoorType]::Open } {
                     $door.Direction = 1
                     $door.TopHeight = $this.FindLowestCeilingSurrounding($sector)
                     $door.TopHeight -= [Fixed]::FromInt(4)
-                    if ($door.TopHeight -ne $sector.CeilingHeight) {
+                    if ($door.TopHeight.Data -ne $sector.CeilingHeight.Data) {
                         $this.world.StartSound($door.Sector.SoundOrigin, [Sfx]::DOROPN, [SfxType]::Misc)
                     }
                     break
@@ -741,8 +823,7 @@ class SectorAction {
         }
 
         switch ($line.Special) {
-            99 {}
-            133 {
+            { $_ -eq 99 -or $_ -eq 133 } {
                 if (-not ($player.Cards[[CardType]::BlueCard] -or $player.Cards[[CardType]::BlueSkull])) {
                     $player.SendMessage([DoomInfo]::Strings.PD_BLUEO)
                     $this.world.StartSound($player.Mobj, [Sfx]::OOF, [SfxType]::Voice)
@@ -751,8 +832,7 @@ class SectorAction {
                 break
             }
 
-            134 {}
-            135 {
+            { $_ -eq 134 -or $_ -eq 135 } {
                 if (-not ($player.Cards[[CardType]::RedCard] -or $player.Cards[[CardType]::RedSkull])) {
                     $player.SendMessage([DoomInfo]::Strings.PD_REDO)
                     $this.world.StartSound($player.Mobj, [Sfx]::OOF, [SfxType]::Voice)
@@ -761,8 +841,7 @@ class SectorAction {
                 break
             }
 
-            136 {}
-            137 {
+            { $_ -eq 136 -or $_ -eq 137 } {
                 if (-not ($player.Cards[[CardType]::YellowCard] -or $player.Cards[[CardType]::YellowSkull])) {
                     $player.SendMessage([DoomInfo]::Strings.PD_YELLOWO)
                     $this.world.StartSound($player.Mobj, [Sfx]::OOF, [SfxType]::Voice)
@@ -774,6 +853,9 @@ class SectorAction {
 
         return $this.DoDoor($line, $type)
     }
+
+    static [int]$maxAdjoiningSectorCount = 64
+    [Fixed[]]$heightList = [Fixed[]]::new([SectorAction]::maxAdjoiningSectorCount)
 
     [Fixed] FindNextHighestFloor([Sector] $sector, [Fixed] $currentHeight) {
         $height = $currentHeight
@@ -788,10 +870,10 @@ class SectorAction {
             }
 
             if ($other.FloorHeight.Data -gt $height.Data) {
-                $function:heightList[$h++] = $other.FloorHeight
+                $this.heightList[$h++] = $other.FloorHeight
             }
 
-            if ($h -ge $function:heightList.Length) {
+            if ($h -ge $this.heightList.Length) {
                 throw [System.Exception]::new("Too many adjoining sectors!")
             }
         }
@@ -800,19 +882,23 @@ class SectorAction {
             return $currentHeight
         }
 
-        $min = $function:heightList[0]
+        $min = $this.heightList[0]
         for ($i = 1; $i -lt $h; $i++) {
-            if ($function:heightList[$i].Data -lt $min.Data) {
-                $min = $function:heightList[$i]
+            if ($this.heightList[$i].Data -lt $min.Data) {
+                $min = $this.heightList[$i]
             }
         }
 
         return $min
     }
+
+    static [int]$platformWait = 3
+    static [Fixed]$platformSpeed = [Fixed]::One
+
     [bool]DoPlatform([LineDef]$line, [PlatformType]$type, [int]$amount) {
         # Activate all <type> plats that are in stasis
         switch ($type) {
-            [PlatformType]::PerpetualRaise {
+            ([PlatformType]::PerpetualRaise) {
                 $this.ActivateInStasis($line.Tag)
                 break
             }
@@ -842,8 +928,8 @@ class SectorAction {
             $plat.Tag = $line.Tag
 
             switch ($type) {
-                [PlatformType]::RaiseToNearestAndChange {
-                    $plat.Speed = $this.platformSpeed / 2
+                ([PlatformType]::RaiseToNearestAndChange) {
+                    $plat.Speed = [SectorAction]::platformSpeed / 2
                     $sector.FloorFlat = $line.FrontSide.Sector.FloorFlat
                     $plat.High = $this.FindNextHighestFloor($sector, $sector.FloorHeight)
                     $plat.Wait = 0
@@ -853,8 +939,8 @@ class SectorAction {
                     break
                 }
 
-                [PlatformType]::RaiseAndChange {
-                    $plat.Speed = $this.platformSpeed / 2
+                ([PlatformType]::RaiseAndChange) {
+                    $plat.Speed = [SectorAction]::platformSpeed / 2
                     $sector.FloorFlat = $line.FrontSide.Sector.FloorFlat
                     $plat.High = $sector.FloorHeight + $amount * [Fixed]::One
                     $plat.Wait = 0
@@ -863,43 +949,43 @@ class SectorAction {
                     break
                 }
 
-                [PlatformType]::DownWaitUpStay {
-                    $plat.Speed = $this.platformSpeed * 4
+                ([PlatformType]::DownWaitUpStay) {
+                    $plat.Speed = [SectorAction]::platformSpeed * 4
                     $plat.Low = $this.FindLowestFloorSurrounding($sector)
-                    if ($plat.Low -gt $sector.FloorHeight) {
+                    if ($plat.Low.Data -gt $sector.FloorHeight.Data) {
                         $plat.Low = $sector.FloorHeight
                     }
                     $plat.High = $sector.FloorHeight
-                    $plat.Wait = 35 * $this.platformWait
+                    $plat.Wait = 35 * [SectorAction]::platformWait
                     $plat.Status = [PlatformState]::Down
                     $this.world.StartSound($sector.SoundOrigin, [Sfx]::PSTART, [SfxType]::Misc)
                     break
                 }
 
-                [PlatformType]::BlazeDwus {
-                    $plat.Speed = $this.platformSpeed * 8
+                ([PlatformType]::BlazeDwus) {
+                    $plat.Speed = [SectorAction]::platformSpeed * 8
                     $plat.Low = $this.FindLowestFloorSurrounding($sector)
-                    if ($plat.Low -gt $sector.FloorHeight) {
+                    if ($plat.Low.Data -gt $sector.FloorHeight.Data) {
                         $plat.Low = $sector.FloorHeight
                     }
                     $plat.High = $sector.FloorHeight
-                    $plat.Wait = 35 * $this.platformWait
+                    $plat.Wait = 35 * [SectorAction]::platformWait
                     $plat.Status = [PlatformState]::Down
                     $this.world.StartSound($sector.SoundOrigin, [Sfx]::PSTART, [SfxType]::Misc)
                     break
                 }
 
-                [PlatformType]::PerpetualRaise {
-                    $plat.Speed = $this.platformSpeed
+                ([PlatformType]::PerpetualRaise) {
+                    $plat.Speed = [SectorAction]::platformSpeed
                     $plat.Low = $this.FindLowestFloorSurrounding($sector)
-                    if ($plat.Low -gt $sector.FloorHeight) {
+                    if ($plat.Low.Data -gt $sector.FloorHeight.Data) {
                         $plat.Low = $sector.FloorHeight
                     }
                     $plat.High = $this.FindHighestFloorSurrounding($sector)
-                    if ($plat.High -lt $sector.FloorHeight) {
+                    if ($plat.High.Data -lt $sector.FloorHeight.Data) {
                         $plat.High = $sector.FloorHeight
                     }
-                    $plat.Wait = 35 * $this.platformWait
+                    $plat.Wait = 35 * [SectorAction]::platformWait
                     $plat.Status = [PlatformState]($this.world.Random.Next() -band 1)
                     $this.world.StartSound($sector.SoundOrigin, [Sfx]::PSTART, [SfxType]::Misc)
                     break
@@ -963,6 +1049,68 @@ class SectorAction {
     # Floor Movement
     static [Fixed]$floorSpeed = [Fixed]::One
 
+    [bool] DoDonut([LineDef] $line) {
+        $sectors = $this.world.Map.Sectors
+        $sectorNumber = -1
+        $result = $false
+
+        while (($sectorNumber = $this.FindSectorFromLineTag($line, $sectorNumber)) -ge 0) {
+            $s1 = $sectors[$sectorNumber]
+
+            # Already moving? If so, keep going...
+            if ($null -ne $s1.SpecialData) {
+                continue
+            }
+
+            $result = $true
+
+            $s2 = $this.GetNextSector($s1.Lines[0], $s1)
+            if ($null -eq $s2) {
+                break
+            }
+
+            for ($i = 0; $i -lt $s2.Lines.Length; $i++) {
+                $s3 = $s2.Lines[$i].BackSector
+
+                if ($s3 -eq $s1) {
+                    continue
+                }
+
+                if ($null -eq $s3) {
+                    return $result
+                }
+
+                $thinkers = $this.world.Thinkers
+
+                $floor1 = [FloorMove]::new($this.world)
+                $thinkers.Add($floor1)
+                $s2.SpecialData = $floor1
+                $floor1.Type = [FloorMoveType]::DonutRaise
+                $floor1.Crush = $false
+                $floor1.Direction = 1
+                $floor1.Sector = $s2
+                $floor1.Speed = [SectorAction]::floorSpeed / 2
+                $floor1.Texture = $s3.FloorFlat
+                $floor1.NewSpecial = [SectorSpecial]::Normal
+                $floor1.FloorDestHeight = $s3.FloorHeight
+
+                $floor2 = [FloorMove]::new($this.world)
+                $thinkers.Add($floor2)
+                $s1.SpecialData = $floor2
+                $floor2.Type = [FloorMoveType]::LowerFloor
+                $floor2.Crush = $false
+                $floor2.Direction = -1
+                $floor2.Sector = $s1
+                $floor2.Speed = [SectorAction]::floorSpeed / 2
+                $floor2.FloorDestHeight = $s3.FloorHeight
+
+                break
+            }
+        }
+
+        return $result
+    }
+
     [bool] DoFloor([LineDef]$line, [FloorMoveType]$type)
     {
         $sectors = $this.world.Map.Sectors
@@ -990,7 +1138,7 @@ class SectorAction {
 
             switch ($type)
             {
-                [FloorMoveType]::LowerFloor {
+                ([FloorMoveType]::LowerFloor) {
                     $floor.Direction = -1
                     $floor.Sector = $sector
                     $floor.Speed = [sectoraction]::floorSpeed
@@ -998,7 +1146,7 @@ class SectorAction {
                     break
                 }
 
-                [FloorMoveType]::LowerFloorToLowest {
+                ([FloorMoveType]::LowerFloorToLowest) {
                     $floor.Direction = -1
                     $floor.Sector = $sector
                     $floor.Speed = [sectoraction]::floorSpeed
@@ -1006,20 +1154,19 @@ class SectorAction {
                     break
                 }
 
-                [FloorMoveType]::TurboLower {
+                ([FloorMoveType]::TurboLower) {
                     $floor.Direction = -1
                     $floor.Sector = $sector
                     $floor.Speed = [sectoraction]::floorSpeed * 4
                     $floor.FloorDestHeight = $this.FindHighestFloorSurrounding($sector)
-                    if ($floor.FloorDestHeight -ne $sector.FloorHeight)
+                    if ($floor.FloorDestHeight.Data -ne $sector.FloorHeight.Data)
                     {
                         $floor.FloorDestHeight += [Fixed]::FromInt(8)
                     }
                     break
                 }
 
-                [FloorMoveType]::RaiseFloorCrush {}
-                [FloorMoveType]::RaiseFloor {
+                { $_ -eq [FloorMoveType]::RaiseFloorCrush -or $_ -eq [FloorMoveType]::RaiseFloor } {
                     if ($type -eq [FloorMoveType]::RaiseFloorCrush)
                     {
                         $floor.Crush = $true
@@ -1028,7 +1175,7 @@ class SectorAction {
                     $floor.Sector = $sector
                     $floor.Speed = [sectoraction]::floorSpeed
                     $floor.FloorDestHeight = $this.FindLowestCeilingSurrounding($sector)
-                    if ($floor.FloorDestHeight -gt $sector.CeilingHeight)
+                    if ($floor.FloorDestHeight.Data -gt $sector.CeilingHeight.Data)
                     {
                         $floor.FloorDestHeight = $sector.CeilingHeight
                     }
@@ -1039,7 +1186,7 @@ class SectorAction {
                     break
                 }
 
-                [FloorMoveType]::RaiseFloorTurbo {
+                ([FloorMoveType]::RaiseFloorTurbo) {
                     $floor.Direction = 1
                     $floor.Sector = $sector
                     $floor.Speed = [sectoraction]::floorSpeed * 4
@@ -1047,7 +1194,7 @@ class SectorAction {
                     break
                 }
 
-                [FloorMoveType]::RaiseFloorToNearest {
+                ([FloorMoveType]::RaiseFloorToNearest) {
                     $floor.Direction = 1
                     $floor.Sector = $sector
                     $floor.Speed = [sectoraction]::floorSpeed
@@ -1055,7 +1202,7 @@ class SectorAction {
                     break
                 }
 
-                [FloorMoveType]::RaiseFloor24 {
+                ([FloorMoveType]::RaiseFloor24) {
                     $floor.Direction = 1
                     $floor.Sector = $sector
                     $floor.Speed = [sectoraction]::floorSpeed
@@ -1063,7 +1210,7 @@ class SectorAction {
                     break
                 }
 
-                [FloorMoveType]::RaiseFloor512 {
+                ([FloorMoveType]::RaiseFloor512) {
                     $floor.Direction = 1
                     $floor.Sector = $sector
                     $floor.Speed = [sectoraction]::floorSpeed
@@ -1071,7 +1218,7 @@ class SectorAction {
                     break
                 }
 
-                [FloorMoveType]::RaiseFloor24AndChange {
+                ([FloorMoveType]::RaiseFloor24AndChange) {
                     $floor.Direction = 1
                     $floor.Sector = $sector
                     $floor.Speed = [sectoraction]::floorSpeed
@@ -1081,7 +1228,7 @@ class SectorAction {
                     break
                 }
 
-                [FloorMoveType]::RaiseToTexture {
+                ([FloorMoveType]::RaiseToTexture) {
                     $min = [int]::MaxValue
                     $floor.Direction = 1
                     $floor.Sector = $sector
@@ -1113,7 +1260,7 @@ class SectorAction {
                     break
                 }
 
-                [FloorMoveType]::LowerAndChange {
+                ([FloorMoveType]::LowerAndChange) {
                     $floor.Direction = -1
                     $floor.Sector = $sector
                     $floor.Speed = [sectoraction]::floorSpeed
@@ -1126,7 +1273,7 @@ class SectorAction {
                             if ($sector.Lines[$i].FrontSide.Sector.Number -eq $sectorNumber)
                             {
                                 $sector = $sector.Lines[$i].BackSide.Sector
-                                if ($sector.FloorHeight -eq $floor.FloorDestHeight)
+                                if ($sector.FloorHeight.Data -eq $floor.FloorDestHeight.Data)
                                 {
                                     $floor.Texture = $sector.FloorFlat
                                     $floor.NewSpecial = $sector.Special
@@ -1136,7 +1283,7 @@ class SectorAction {
                             else
                             {
                                 $sector = $sector.Lines[$i].FrontSide.Sector
-                                if ($sector.FloorHeight -eq $floor.FloorDestHeight)
+                                if ($sector.FloorHeight.Data -eq $floor.FloorDestHeight.Data)
                                 {
                                     $floor.Texture = $sector.FloorFlat
                                     $floor.NewSpecial = $sector.Special
@@ -1178,18 +1325,19 @@ class SectorAction {
             $floor.Direction = 1
             $floor.Sector = $sector
 
-            
+            [Fixed]$stairSpeed = $null
+            [Fixed]$stairSize = $null
             
             switch ($type)
             {
-                [StairType]::Build8 {
-                    [Fixed]$function:speed = $this.floorSpeed / 4
-                    [Fixed]$function:stairSize = [Fixed]::FromInt(8)
+                ([StairType]::Build8) {
+                    $stairSpeed = [SectorAction]::floorSpeed / 4
+                    $stairSize = [Fixed]::FromInt(8)
                     break
                 }
-                [StairType]::Turbo16 {
-                    [Fixed]$function:speed = $this.floorSpeed * 4
-                    [Fixed]$function:stairSize = [Fixed]::FromInt(16)
+                ([StairType]::Turbo16) {
+                    $stairSpeed = [SectorAction]::floorSpeed * 4
+                    $stairSize = [Fixed]::FromInt(16)
                     break
                 }
                 default {
@@ -1197,8 +1345,8 @@ class SectorAction {
                 }
             }
 
-            $floor.Speed = [Fixed]$function:speed
-            $height = $sector.FloorHeight + [Fixed]$function:stairSize
+            $floor.Speed = $stairSpeed
+            $height = $sector.FloorHeight + $stairSize
             $floor.FloorDestHeight = $height
 
             $texture = $sector.FloorFlat
@@ -1232,7 +1380,7 @@ class SectorAction {
                         continue
                     }
 
-                    $height += [Fixed]$function:stairSize
+                    $height += $stairSize
 
                     if ($null -ne $target.SpecialData)
                     {
@@ -1247,7 +1395,7 @@ class SectorAction {
                     $sector.SpecialData = $floor
                     $floor.Direction = 1
                     $floor.Sector = $sector
-                    $floor.Speed = $function:speed
+                    $floor.Speed = $stairSpeed
                     $floor.FloorDestHeight = $height
                     $ok = $true
                     break
@@ -1295,7 +1443,7 @@ class SectorAction {
                     $ceiling.TopHeight = $sector.CeilingHeight
                     $ceiling.BottomHeight = $sector.FloorHeight + [Fixed]::FromInt(8)
                     $ceiling.Direction = -1
-                    $ceiling.Speed = $this.CeilingSpeed * 2
+                    $ceiling.Speed = [SectorAction]::CeilingSpeed * 2
                     break
                 }
     
@@ -1313,14 +1461,14 @@ class SectorAction {
                         $ceiling.BottomHeight += [Fixed]::FromInt(8)
                     }
                     $ceiling.Direction = -1
-                    $ceiling.Speed = $this.CeilingSpeed
+                    $ceiling.Speed = [SectorAction]::CeilingSpeed
                     break
                 }
     
                 {$_ -eq [CeilingMoveType]::RaiseToHighest} {
                     $ceiling.TopHeight = $this.FindHighestCeilingSurrounding($sector)
                     $ceiling.Direction = 1
-                    $ceiling.Speed = $this.CeilingSpeed
+                    $ceiling.Speed = [SectorAction]::CeilingSpeed
                     break
                 }
             }
